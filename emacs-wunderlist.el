@@ -2,6 +2,27 @@
   '(("X-Access-Token" . "")
     ("X-Client-Id" . "")))
 
+(defun pbl--url-retrieve (url method)
+  (let ((url-request-method method)
+        (url-request-extra-headers pbl--wl-headers))
+    (url-retrieve url 'pbl--cb)))
+
+(defun pbl--cb (response)
+  (progn
+    (goto-char url-http-end-of-headers)
+    (json-read)))
+
+(defun pbl--wl-get-lists ()
+  (let ((url "https://a.wunderlist.com/api/v1/lists")
+        (method "GET"))
+    (pbl--url-retrieve url method)))
+
+(let ((lists (pbl--wl-get-lists)))
+  (print lists))
+
+;; GOOD STUFF ABOVE
+;;
+;; STUDY MATERIALS BELOW
 (defun pbl--wl-get-lists ()
   (let ((url-request-method "GET")
         (url-request-extra-headers pbl--wl-headers))
@@ -31,7 +52,7 @@
              (json-array-type 'vector))
          (json-read))))))
 
-(pbl--wl-get-tasks)
+(pbl--wl-get-lists)
 (print (pbl--wl-get-tasks))
 (print (pbl--wl-get-lists))
 

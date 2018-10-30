@@ -1,24 +1,55 @@
-(defvar pbl--wl-headers
-  '(("X-Access-Token" . "")
-    ("X-Client-Id" . "")))
+(defvar wl-token "")
+(defvar wl-client-id "")
+(defvar wl-sample-list-id "371687651") ;;emacs-wunderlist-test
 
-(defun pbl--url-retrieve (url method)
+(defvar wl-auth-headers
+  '(("X-Access-Token" . wl-token)
+    ("X-Client-Id" . wl-client-id)))
+
+(defvar wl-task-buffer-name "*wl-task-buffer*")
+(defvar wl-url-get-lists "https://a.wunderlist.com/api/v1/lists")
+(defun wl-url-get-tasks-for-list (wl-list-id)
+  (concat "https://a.wunderlist.com/api/v1/tasks?"
+          (url-build-query-string `((list_id ,wl-list-id)))))
+
+(defun wl-url-retrieve (url method)
   (let ((url-request-method method)
-        (url-request-extra-headers pbl--wl-headers))
-    (url-retrieve url 'pbl--cb)))
+        (url-request-extra-headers wl-auth-headers))
+    (url-retrieve
+     url
+     (lambda (response)
+       (goto-char url-http-end-of-headers)
+       (json-read)))))
 
-(defun pbl--cb (response)
-  (progn
-    (goto-char url-http-end-of-headers)
-    (json-read)))
+(defun wl-get-tasks-for-list (list-id)
+  (wl-url-retrieve (wl-url-get-tasks-for-list list-id) "GET"))
 
-(defun pbl--wl-get-lists ()
-  (let ((url "https://a.wunderlist.com/api/v1/lists")
-        (method "GET"))
-    (pbl--url-retrieve url method)))
+(wl-get-tasks-for-list wl-sample-list-id)
 
-(let ((lists (pbl--wl-get-lists)))
-  (print lists))
+       ;(let ((result (json-read)))
+       ;  result)))))
+       ;(json-read)))))
+       ;(let ((json-object-type 'plist)
+       ;      (json-key-type 'symbol)
+       ;      (json-array-type 'vector))
+       ;  (json-read))))))
+         ;(let ((result (json-read)))
+           ;;(print (plist-get (elt result 0) 'title))))))))
+           ;(print (elt result 0))))))))
+
+(defun wl-get-lists () (wl-url-retrieve wl-url-get-lists "GET"))
+
+(defun wl-prepare-display-buffer ()
+  (let ((buf (get-buffer-create wl-task-buffer-name)))
+    (with-current-buffer buf
+      (setq buffer-read-only nil)
+      (erase-buffer)
+      (kill-all-local-variables)
+      (insert (wl-get-lists))
+      (setq buffer-read-only t))
+    buf))
+
+(wl-prepare-display-buffer)
 
 ;; GOOD STUFF ABOVE
 ;;

@@ -18,7 +18,15 @@
 (defun wl-display-response (response)
   (let ((json-data (wl-process-response response)))
     (if json-data
-        (print json-data)
+        (with-current-buffer (wl-prepare-display-buffer)
+          (setq buffer-read-only nil)
+          (erase-buffer)
+          ;; (insert (plist-get (elt json-data 0) 'title))
+          (insert (plist-get (elt json-data 0) 'title))
+          ;; (insert json-data)
+          ;; (insert "FOO")
+          (setq buffer-read-only t)
+          (pop-to-buffer (current-buffer)))
       (print "NO DICE FAM"))))
 
 (defun wl-process-response (response)
@@ -26,9 +34,21 @@
  (set-buffer-multibyte t)
  (if (re-search-forward "^HTTP/.+ 200 OK$" (line-end-position) t)
      (when (search-forward "\n\n" nil t)
-       (json-read))))
+       (let ((json-object-type 'plist)
+             (json-key-type 'symbol)
+             (json-array-type 'vector))
+         (json-read)))))
 
 (defun wl-get-tasks-for-list (list-id)
   (wl-url-retrieve (wl-url-get-tasks-for-list list-id) "GET"))
+
+(defun wl-prepare-display-buffer ()
+  (let ((buf (get-buffer-create wl-task-buffer-name)))
+    (with-current-buffer buf
+      (setq buffer-read-only nil)
+      (erase-buffer)
+      (kill-all-local-variables)
+      (setq buffer-read-only t))
+    buf))
 
 (wl-get-tasks-for-list wl-sample-list-id)

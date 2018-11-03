@@ -1,3 +1,30 @@
+;; TODO:
+;; 1:
+;; Create major mode
+;; allow "q" to close buffer/window
+;; set major mode in the buffer I create
+;; Open that
+;;
+;; 2:
+;; Pivot and format data to display list of tasks
+;;
+;; 3:
+;; Propertize data so that task contains task ID and list ID
+;;
+;; 4:
+;; Read from buffer to create new task for list
+;;
+;; 5a:
+;; Mark task done (API Call)
+;; 5b:
+;; Mark task done (bind to key)
+;;
+;; 6:
+;; Delete task
+;;
+;; 7:
+;; Move task to new list
+
 (defvar wl-sample-list-id "371687651") ;;emacs-wunderlist-test
 
 (defvar wl-auth-headers

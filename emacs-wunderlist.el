@@ -24,6 +24,9 @@
 ;;
 ;; 7:
 ;; Move task to new list
+;;
+;; 8:
+;; Cache responses (when appropriate) to reduce HTTP calls
 
 (defvar wl-sample-list-id "371687651") ;;emacs-wunderlist-test
 

@@ -1,9 +1,9 @@
 ;; TODO:
 ;; 1:
-;; Create major mode
-;; allow "q" to close buffer/window
-;; set major mode in the buffer I create
-;; Open that
+;; Create major mode DONE
+;; set major mode in the buffer I create DONE
+;; Open that DONE
+;; allow "q" to close buffer/window NOT WORKING
 ;;
 ;; 2:
 ;; Pivot and format data to display list of tasks
@@ -78,7 +78,22 @@
       (setq buffer-read-only nil)
       (erase-buffer)
       (kill-all-local-variables)
+      (wl-mode)
       (setq buffer-read-only t))
     buf))
 
 (wl-get-tasks-for-list wl-sample-list-id)
+
+;; NOTE TO SELF: Evil Mode will override this, somehow need to
+;; turn off evil mode when buffer is prepared?
+(defvar wl-mode-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map "q" (lambda() (interactive) (quit-window t (selected-window))))
+    map)
+  "Get the keymap for the wl window")
+
+(define-derived-mode wl-mode nil "WL"
+  "A major mode for the wl task buffer.
+The following keys are available in `wl-mode':
+\\{wl-mode-map}"
+  (setq truncate-lines t))

@@ -1,5 +1,5 @@
 ;; TODO:
-;; 1:
+;; 1: DONE
 ;; Create major mode DONE
 ;; set major mode in the buffer I create DONE
 ;; Open that DONE
@@ -30,10 +30,7 @@
 
 ;; This won't make it into the final build
 ;; Just making my own life easier by handling auth info separately
-(load-file "./auth.el")
-
-;; Just for testing
-(defvar ewl-sample-list-id "371687651") ;;emacs-wunderlist-test
+(load-file "./setup.el")
 
 (defgroup ewl nil
   "A simple plugin to manage your wunderlist via emacs"
@@ -105,8 +102,6 @@
       (setq buffer-read-only t))
     buf))
 
-(ewl-get-tasks-for-list ewl-sample-list-id)
-
 ;; NOTE TO SELF: Evil Mode will override this, somehow need to
 ;; turn off evil mode when buffer is prepared?
 (defvar ewl-mode-map
@@ -120,3 +115,6 @@
 The following keys are available in `ewl-mode':
 \\{ewl-mode-map}"
   (setq truncate-lines t))
+
+;; ewl-sample-list-id comes from setup.el
+(ewl-get-tasks-for-list ewl-sample-list-id)

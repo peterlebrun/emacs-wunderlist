@@ -29,45 +29,45 @@
 ;; Cache responses (when appropriate) to reduce HTTP calls
 
 ;; Just for testing
-(defvar wl-sample-list-id "371687651") ;;emacs-wunderlist-test
+(defvar ewl-sample-list-id "371687651") ;;emacs-wunderlist-test
 
-(defgroup wl nil
+(defgroup ewl nil
   "A simple plugin to manage your wunderlist via emacs"
   :group 'tools)
 
-(defcustom wl-access-token ""
+(defcustom ewl-access-token ""
   "Wunderline access token for API requests."
-  :group 'wl
+  :group 'ewl
   :type 'string)
 
-(defcustom wl-client-id ""
+(defcustom ewl-client-id ""
   "Wunderline client id for API requests."
-  :group 'wl
+  :group 'ewl
   :type 'string)
 
-(defcustom wl-task-buffer-name "*wl-task-buffer*"
+(defcustom ewl-task-buffer-name "*ewl-task-buffer*"
   "Name for the emacs wunderlist buffer."
-  :group 'wl
+  :group 'ewl
   :type 'string)
 
-(defvar wl-auth-headers
-  `(("X-Access-Token" . ,wl-access-token)
-    ("X-Client-Id" . ,wl-client-id)))
+(defvar ewl-auth-headers
+  `(("X-Access-Token" . ,ewl-access-token)
+    ("X-Client-Id" . ,ewl-client-id)))
 
-(defvar wl-url-get-lists "https://a.wunderlist.com/api/v1/lists")
-(defun wl-url-get-tasks-for-list (wl-list-id)
+(defvar ewl-url-get-lists "https://a.wunderlist.com/api/v1/lists")
+(defun ewl-url-get-tasks-for-list (ewl-list-id)
   (concat "https://a.wunderlist.com/api/v1/tasks?"
-          (url-build-query-string `((list_id ,wl-list-id)))))
+          (url-build-query-string `((list_id ,ewl-list-id)))))
 
-(defun wl-url-retrieve (url method)
+(defun ewl-url-retrieve (url method)
   (let ((url-request-method method)
-        (url-request-extra-headers wl-auth-headers))
-    (url-retrieve url 'wl-display-response)))
+        (url-request-extra-headers ewl-auth-headers))
+    (url-retrieve url 'ewl-display-response)))
 
-(defun wl-display-response (response)
-  (let ((json-data (wl-process-response response)))
+(defun ewl-display-response (response)
+  (let ((json-data (ewl-process-response response)))
     (if json-data
-        (with-current-buffer (wl-prepare-display-buffer)
+        (with-current-buffer (ewl-prepare-display-buffer)
           (setq buffer-read-only nil)
           (erase-buffer)
           ;; (insert (plist-get (elt json-data 0) 'title))
@@ -78,7 +78,7 @@
           (pop-to-buffer (current-buffer)))
       (print "NO DICE FAM"))))
 
-(defun wl-process-response (response)
+(defun ewl-process-response (response)
  "Extract the JSON response from the buffer returned by url-http."
  (set-buffer-multibyte t)
  (if (re-search-forward "^HTTP/.+ 200 OK$" (line-end-position) t)
@@ -88,31 +88,31 @@
              (json-array-type 'vector))
          (json-read)))))
 
-(defun wl-get-tasks-for-list (list-id)
-  (wl-url-retrieve (wl-url-get-tasks-for-list list-id) "GET"))
+(defun ewl-get-tasks-for-list (list-id)
+  (ewl-url-retrieve (ewl-url-get-tasks-for-list list-id) "GET"))
 
-(defun wl-prepare-display-buffer ()
-  (let ((buf (get-buffer-create wl-task-buffer-name)))
+(defun ewl-prepare-display-buffer ()
+  (let ((buf (get-buffer-create ewl-task-buffer-name)))
     (with-current-buffer buf
       (setq buffer-read-only nil)
       (erase-buffer)
       (kill-all-local-variables)
-      (wl-mode)
+      (ewl-mode)
       (setq buffer-read-only t))
     buf))
 
-(wl-get-tasks-for-list wl-sample-list-id)
+(ewl-get-tasks-for-list ewl-sample-list-id)
 
 ;; NOTE TO SELF: Evil Mode will override this, somehow need to
 ;; turn off evil mode when buffer is prepared?
-(defvar wl-mode-map
+(defvar ewl-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map "q" (lambda() (interactive) (quit-window t (selected-window))))
     map)
-  "Get the keymap for the wl window")
+  "Get the keymap for the ewl window")
 
-(define-derived-mode wl-mode nil "WL"
-  "A major mode for the wl task buffer.
-The following keys are available in `wl-mode':
-\\{wl-mode-map}"
+(define-derived-mode ewl-mode nil "EWL"
+  "A major mode for the ewl task buffer.
+The following keys are available in `ewl-mode':
+\\{ewl-mode-map}"
   (setq truncate-lines t))

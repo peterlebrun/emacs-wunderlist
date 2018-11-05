@@ -70,11 +70,8 @@
     (if json-data
         (with-current-buffer (ewl-prepare-display-buffer)
           (setq buffer-read-only nil)
-          (erase-buffer)
-          ;; (insert (plist-get (elt json-data 0) 'title))
-          (insert (plist-get (elt json-data 0) 'title))
-          ;; (insert json-data)
-          ;; (insert "FOO")
+          ;(insert (ewl-prepare-tasks-for-display json-data))
+          (ewl-display-tasks (ewl-prepare-tasks-for-display json-data))
           (setq buffer-read-only t)
           (pop-to-buffer (current-buffer)))
       (print "NO DICE FAM"))))
@@ -101,6 +98,29 @@
       (ewl-mode)
       (setq buffer-read-only t))
     buf))
+
+;; TODO: it doesn't like something here
+;; "error in process filter: Wrong type argument: sequencep, `id`"
+(defun ewl-display-tasks (task-list)
+  "Foobarf"
+  (setq buffer-read-only nil)
+  (while task-list
+    (let ((title (car task-list))
+          (id (cadr task-list)))
+      (insert (concat "id" "\t" title "\n")))
+    (setq task-list (cdr task-list)))
+  (setq buffer-read-only t))
+
+;; TODO: Set this up with a proper loop
+(defun ewl-prepare-tasks-for-display (task-list)
+  "Pivot data into display format"
+  (list
+   (plist-get (elt task-list 0) 'title)
+   (plist-get (elt task-list 0) 'id)
+   (plist-get (elt task-list 1) 'title)
+   (plist-get (elt task-list 1) 'id)
+   (plist-get (elt task-list 2) 'title)
+   (plist-get (elt task-list 2) 'id)))
 
 ;; NOTE TO SELF: Evil Mode will override this, somehow need to
 ;; turn off evil mode when buffer is prepared?

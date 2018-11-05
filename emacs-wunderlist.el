@@ -3,7 +3,7 @@
 ;; Create major mode DONE
 ;; set major mode in the buffer I create DONE
 ;; Open that DONE
-;; allow "q" to close buffer/window NOT WORKING
+;; allow "q" to close buffer/window DONE
 ;;
 ;; 2:
 ;; Pivot and format data to display list of tasks

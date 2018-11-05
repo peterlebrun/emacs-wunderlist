@@ -11,7 +11,7 @@
 ;; 3:
 ;; Propertize data so that task contains task ID and list ID
 ;;
-;; 4:
+;; 4
 ;; Read from buffer to create new task for list
 ;;
 ;; 5a:
@@ -28,13 +28,32 @@
 ;; 8:
 ;; Cache responses (when appropriate) to reduce HTTP calls
 
+;; Just for testing
 (defvar wl-sample-list-id "371687651") ;;emacs-wunderlist-test
 
-(defvar wl-auth-headers
-  '(("X-Access-Token" . "")
-    ("X-Client-Id" . "")))
+(defgroup wl nil
+  "A simple plugin to manage your wunderlist via emacs"
+  :group 'tools)
 
-(defvar wl-task-buffer-name "*wl-task-buffer*")
+(defcustom wl-access-token ""
+  "Wunderline access token for API requests."
+  :group 'wl
+  :type 'string)
+
+(defcustom wl-client-id ""
+  "Wunderline client id for API requests."
+  :group 'wl
+  :type 'string)
+
+(defcustom wl-task-buffer-name "*wl-task-buffer*"
+  "Name for the emacs wunderlist buffer."
+  :group 'wl
+  :type 'string)
+
+(defvar wl-auth-headers
+  `(("X-Access-Token" . ,wl-access-token)
+    ("X-Client-Id" . ,wl-client-id)))
+
 (defvar wl-url-get-lists "https://a.wunderlist.com/api/v1/lists")
 (defun wl-url-get-tasks-for-list (wl-list-id)
   (concat "https://a.wunderlist.com/api/v1/tasks?"

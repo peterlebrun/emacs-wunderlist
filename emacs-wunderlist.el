@@ -28,6 +28,10 @@
 ;; 8:
 ;; Cache responses (when appropriate) to reduce HTTP calls
 
+;; This won't make it into the final build
+;; Just making my own life easier by handling auth info separately
+(load-file "./auth.el")
+
 ;; Just for testing
 (defvar ewl-sample-list-id "371687651") ;;emacs-wunderlist-test
 

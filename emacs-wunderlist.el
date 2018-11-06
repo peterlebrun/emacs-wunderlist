@@ -110,13 +110,12 @@
     (setq task-list (cdr task-list)))
   (setq buffer-read-only t))
 
-;; TODO: Set this up with a proper loop
 (defun ewl-prepare-tasks-for-display (task-list)
   "Pivot data into display format"
   (mapcar (lambda(val) (plist-get val 'title)) task-list))
 
-;; NOTE TO SELF: Evil Mode will override this, somehow need to
-;; turn off evil mode when buffer is prepared?
+;; Evil mode will override this
+;; It's up to the user to handle evil mode in their configs
 (defvar ewl-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map "q" (lambda() (interactive) (quit-window t (selected-window))))

@@ -28,8 +28,7 @@
 ;; 8:
 ;; Cache responses (when appropriate) to reduce HTTP calls
 
-;; This won't make it into the final build
-;; Just making my own life easier by handling auth info separately
+;; Load auth info during development
 (load-file "./setup.el")
 
 (defgroup ewl nil

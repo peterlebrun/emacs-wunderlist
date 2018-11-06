@@ -98,21 +98,26 @@
       (setq buffer-read-only t))
     buf))
 
+(defun ewl-prepare-tasks-for-display (task-list)
+  "Pivot data into display format"
+  (mapcar (lambda(val)
+            (list
+              (plist-get val 'id)
+              (plist-get val 'title)))
+          task-list))
+
 ;; TODO: it doesn't like something here
 ;; "error in process filter: Wrong type argument: sequencep, `id`"
 (defun ewl-display-tasks (task-list)
   "Foobarf"
   (setq buffer-read-only nil)
   (while task-list
-    (let ((title (car task-list)))
-          ;(id (cadr task-list)))
-      (insert (concat title "\n")))
+    (let* ((element (car task-list))
+           (id (car element))
+           (title (cdr element)))
+      (insert (concat (number-to-string id) "\t" "\n")))
     (setq task-list (cdr task-list)))
   (setq buffer-read-only t))
-
-(defun ewl-prepare-tasks-for-display (task-list)
-  "Pivot data into display format"
-  (mapcar (lambda(val) (plist-get val 'title)) task-list))
 
 ;; Evil mode will override this
 ;; It's up to the user to handle evil mode in their configs

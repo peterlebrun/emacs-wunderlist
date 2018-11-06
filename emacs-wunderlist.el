@@ -50,8 +50,6 @@
   :group 'ewl
   :type 'string)
 
-(defvar ewl-auth-headers (ewl--get-auth-headers))
-
 (defun ewl--get-auth-headers ()
   "A nice function to return a list of auth headers."
   `(("X-Access-Token" . ,ewl-access-token)
@@ -64,7 +62,7 @@
 
 (defun ewl-url-retrieve (url method)
   (let ((url-request-method method)
-        (url-request-extra-headers ewl-auth-headers))
+        (url-request-extra-headers (ewl--get-auth-headers)))
     (url-retrieve url 'ewl-display-response)))
 
 (defun ewl-display-response (response)

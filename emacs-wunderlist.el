@@ -114,8 +114,8 @@
   (while task-list
     (let* ((element (car task-list))
            (id (car element))
-           (title (cdr element)))
-      (insert (concat (number-to-string id) "\t" "\n")))
+           (title (cadr element)))
+      (insert (concat (number-to-string id) "\t" title "\n")))
     (setq task-list (cdr task-list)))
   (setq buffer-read-only t))
 

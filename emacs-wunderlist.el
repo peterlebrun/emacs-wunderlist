@@ -50,7 +50,10 @@
   :group 'ewl
   :type 'string)
 
-(defvar ewl-auth-headers
+(defvar ewl-auth-headers (ewl-get-auth-headers))
+
+(defun ewl-get-auth-headers ()
+  "A nice function to return a list of auth headers."
   `(("X-Access-Token" . ,ewl-access-token)
     ("X-Client-Id" . ,ewl-client-id)))
 

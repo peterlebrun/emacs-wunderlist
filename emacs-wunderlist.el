@@ -6,7 +6,7 @@
 ;; allow "q" to close buffer/window DONE
 ;;
 ;; 2:
-;; Pivot and format data to display list of tasks
+;; Pivot and format data to display list of tasks DONE
 ;;
 ;; 3:
 ;; Propertize data so that task contains task ID and list ID
@@ -50,9 +50,9 @@
   :group 'ewl
   :type 'string)
 
-(defvar ewl-auth-headers (ewl-get-auth-headers))
+(defvar ewl-auth-headers (ewl--get-auth-headers))
 
-(defun ewl-get-auth-headers ()
+(defun ewl--get-auth-headers ()
   "A nice function to return a list of auth headers."
   `(("X-Access-Token" . ,ewl-access-token)
     ("X-Client-Id" . ,ewl-client-id)))
@@ -109,8 +109,6 @@
               (plist-get val 'title)))
           task-list))
 
-;; TODO: it doesn't like something here
-;; "error in process filter: Wrong type argument: sequencep, `id`"
 (defun ewl-display-tasks (task-list)
   "Foobarf"
   (setq buffer-read-only nil)

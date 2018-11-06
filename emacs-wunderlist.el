@@ -107,7 +107,7 @@
   (while task-list
     (let ((title (car task-list)))
           ;(id (cadr task-list)))
-      (insert (concat "id" "\t" title "\n")))
+      (insert (concat title "\n")))
     (setq task-list (cdr task-list)))
   (setq buffer-read-only t))
 
@@ -115,17 +115,6 @@
 (defun ewl-prepare-tasks-for-display (task-list)
   "Pivot data into display format"
   (mapcar (lambda(val) (plist-get val 'title)) task-list))
-
-  ;(list
-  ; (list
-  ;  (plist-get (elt task-list 0) 'id)
-  ;  (plist-get (elt task-list 0) 'title))
-  ; (list
-  ;  (plist-get (elt task-list 1) 'id)
-  ;  (plist-get (elt task-list 1) 'title))
-  ; (list
-  ;  (plist-get (elt task-list 2) 'id)
-  ;  (plist-get (elt task-list 2) 'title))))
 
 ;; NOTE TO SELF: Evil Mode will override this, somehow need to
 ;; turn off evil mode when buffer is prepared?

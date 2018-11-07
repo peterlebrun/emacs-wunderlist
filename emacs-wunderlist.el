@@ -69,10 +69,10 @@
   (concat "https://a.wunderlist.com/api/v1/tasks?"
           (url-build-query-string `((list_id ,ewl-list-id)))))
 
-(defun ewl-url-retrieve (url method)
+(defun ewl-url-retrieve (url method cb)
   (let ((url-request-method method)
         (url-request-extra-headers (ewl--get-auth-headers)))
-    (url-retrieve url 'ewl-display-response)))
+    (url-retrieve url cb)))
 
 (defun ewl-display-response (response)
   (let ((json-data (ewl-process-response response)))
@@ -95,7 +95,10 @@
          (json-read)))))
 
 (defun ewl-get-tasks-for-list (list-id)
-  (ewl-url-retrieve (ewl--get-url-tasks-for-list list-id) "GET"))
+  (ewl-url-retrieve
+   (ewl--get-url-tasks-for-list list-id)
+   "GET"
+   'ewl-display-response))
 
 (defun ewl-get-folders ()
   "Retrieve all lists"

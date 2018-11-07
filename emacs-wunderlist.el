@@ -27,6 +27,9 @@
 ;;
 ;; 8:
 ;; Cache responses (when appropriate) to reduce HTTP calls
+;;
+;; 9:
+;; Add README.me to the repo
 
 ;; Load auth info during development
 (load-file "./setup.el")

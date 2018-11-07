@@ -58,8 +58,14 @@
   `(("X-Access-Token" . ,ewl-access-token)
     ("X-Client-Id" . ,ewl-client-id)))
 
+(defvar ewl-url-get-folders "https://a.wunderlist.com/api/v1/folders")
 (defvar ewl-url-get-lists "https://a.wunderlist.com/api/v1/lists")
-(defun ewl-url-get-tasks-for-list (ewl-list-id)
+
+(defun ewl--get-url-specific-task (ewl-task-id)
+  (concat "https://a.wunderlist.com/api/v1/tasks/"
+          (number-to-string ewl-task-id)))
+
+(defun ewl--get-url-tasks-for-list (ewl-list-id)
   (concat "https://a.wunderlist.com/api/v1/tasks?"
           (url-build-query-string `((list_id ,ewl-list-id)))))
 
@@ -73,7 +79,6 @@
     (if json-data
         (with-current-buffer (ewl-prepare-display-buffer)
           (setq buffer-read-only nil)
-          ;(insert (ewl-prepare-tasks-for-display json-data))
           (ewl-display-tasks (ewl-prepare-tasks-for-display json-data))
           (setq buffer-read-only t)
           (pop-to-buffer (current-buffer)))
@@ -90,7 +95,29 @@
          (json-read)))))
 
 (defun ewl-get-tasks-for-list (list-id)
-  (ewl-url-retrieve (ewl-url-get-tasks-for-list list-id) "GET"))
+  (ewl-url-retrieve (ewl--get-url-tasks-for-list list-id) "GET"))
+
+(defun ewl-get-folders ()
+  "Retrieve all lists"
+  (ewl-url-retrieve ewl-url-get-folders "GET"))
+
+(defun ewl-get-lists ()
+  "Retrieve all lists"
+  (ewl-url-retrieve ewl-url-get-lists "GET"))
+
+;; This does not work properly
+(defun ewl-delete-task (ewl-task-id)
+  "Delete a task"
+  (ewl-url-retrieve (ewl--get-url-specific-task ewl-task-id) "DELETE"))
+
+;; This seems to work
+(defun ewl-get-task (ewl-task-id)
+  "Delete a task"
+  (ewl-url-retrieve (ewl--get-url-specific-task ewl-task-id) "GET"))
+
+;(defun ewl-create-task (ewl-task-id)
+;  "Delete a task"
+;  (ewl-url-retrieve (ewl--get-url-specific-task ewl-task-id) "POST"))
 
 (defun ewl-prepare-display-buffer ()
   (let ((buf (get-buffer-create ewl-task-buffer-name)))
@@ -104,11 +131,17 @@
 
 (defun ewl-prepare-tasks-for-display (task-list)
   "Pivot data into display format"
-  (mapcar (lambda(val)
-            (list
-              (plist-get val 'id)
-              (plist-get val 'title)))
+  (mapcar (lambda(task-data)
+            (ewl-parse-task task-data))
           task-list))
+
+;; @TODO: Make it so that ewl-get-task
+;; passes off to this single task
+(defun ewl-parse-task (task-data)
+  "Get relevant data for a specific task."
+  (list
+   (plist-get task-data 'id)
+   (plist-get task-data 'title)))
 
 (defun ewl-display-tasks (task-list)
   "Foobarf"
@@ -125,7 +158,8 @@
 ;; It's up to the user to handle evil mode in their configs
 (defvar ewl-mode-map
   (let ((map (make-sparse-keymap)))
-    (define-key map "q" (lambda() (interactive) (quit-window t (selected-window))))
+    (define-key map "q"
+      (lambda() (interactive) (quit-window t (selected-window))))
     map)
   "Get the keymap for the ewl window")
 
@@ -137,3 +171,6 @@ The following keys are available in `ewl-mode':
 
 ;; ewl-sample-list-id comes from setup.el
 (ewl-get-tasks-for-list ewl-sample-list-id)
+;(ewl-get-folders)
+;(ewl-get-lists)
+;(ewl-get-task 4372769545)

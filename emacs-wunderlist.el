@@ -165,10 +165,11 @@
   (let ((map (make-sparse-keymap)))
     (define-key map "q"
       (lambda() (interactive) (quit-window t (selected-window))))
-    (define-key map "\r" (lambda() (interactive) (ewl--get-id-from-thing)))
+    (define-key map "\r"
+      (lambda() (interactive) (ewl--get-id-from-thing-at-point)))
     map))
 
-(defun ewl--get-id-from-thing ()
+(defun ewl--get-id-from-thing-at-point ()
   "Get id text property of thing at point."
   (let* ((text-string (thing-at-point 'word))
          (id (get-text-property 1 'id text-string)))

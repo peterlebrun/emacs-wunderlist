@@ -142,18 +142,21 @@
 ;; passes off to this single task
 (defun ewl-parse-task (task-data)
   "Get relevant data for a specific task."
-  (list
-   (plist-get task-data 'id)
-   (plist-get task-data 'title)))
+  (let ((id (plist-get task-data 'id))
+        (title (plist-get task-data 'title)))
+    (propertize title 'id id)))
+  ;(list
+  ; (plist-get task-data 'id)
+  ; (plist-get task-data 'title)))
 
 (defun ewl-display-tasks (task-list)
   "Foobarf"
   (setq buffer-read-only nil)
   (while task-list
-    (let* ((element (car task-list))
-           (id (car element))
-           (title (cadr element)))
-      (insert (concat (number-to-string id) "\t" title "\n")))
+    (let* ((title (car task-list)))
+      (print title)
+      (print (get-text-property 0 'id title))
+      (insert (concat title "\n")))
     (setq task-list (cdr task-list)))
   (setq buffer-read-only t))
 

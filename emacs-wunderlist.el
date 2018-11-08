@@ -73,15 +73,12 @@
   (concat "https://a.wunderlist.com/api/v1/tasks?"
           (url-build-query-string `((list_id ,ewl-list-id)))))
 
-(defun ewl-url-retrieve (url method cb)
+(defun ewl-url-retrieve (url cb &optional method data)
   ""
-  (let ((url-request-method method)
-        (url-request-extra-headers (ewl--get-auth-headers)))
+  (let ((url-request-method (or method "GET"))
+        (url-request-extra-headers (ewl--get-auth-headers))
+        (url-request-data data))
     (url-retrieve url cb)))
-
-(defun ewl-url-retrieve-post (url data cb)
-  ""
-  (let ((url-request-data data)) (ewl-url-retrieve url "POST" cb)))
 
 (defun ewl-display-response (response)
   (let ((json-data (ewl-process-response response)))
@@ -106,16 +103,15 @@
 (defun ewl-get-tasks-for-list (list-id)
   (ewl-url-retrieve
    (ewl--get-url-tasks-for-list list-id)
-   "GET"
    'ewl-display-response))
 
 (defun ewl-get-folders ()
   "Retrieve all lists"
-  (ewl-url-retrieve ewl-url-get-folders "GET"))
+  (ewl-url-retrieve ewl-url-get-folders))
 
 (defun ewl-get-lists ()
   "Retrieve all lists"
-  (ewl-url-retrieve ewl-url-get-lists "GET" 'ewl-display-response))
+  (ewl-url-retrieve ewl-url-get-lists 'ewl-display-response))
 
 ;; This does not work properly
 (defun ewl-delete-task (ewl-task-id)
@@ -125,7 +121,7 @@
 ;; This seems to work
 (defun ewl-get-task (ewl-task-id)
   "Delete a task"
-  (ewl-url-retrieve (ewl--get-url-specific-task ewl-task-id) "GET"))
+  (ewl-url-retrieve (ewl--get-url-specific-task ewl-task-id)))
 
 (defun ewl-prepare-display-buffer ()
   (let ((buf (get-buffer-create ewl-task-buffer-name)))
@@ -189,15 +185,15 @@ The following keys are available in `ewl-mode':
 ;; (ewl-get-tasks-for-list ewl-sample-list-id)
 ;; (ewl-get-folders)
 ;; (ewl-get-task 4372769545)
-;; (ewl-get-lists)
+(ewl-get-lists)
 
 (defun ewl-create-task ()
   ""
-  ;; (print (concat "body="))); (json-encode-string "{'list_id': 371687651, 'title': 'foo bar baz'}"))))
-  (ewl-url-retrieve-post
+  (ewl-url-retrieve
    "https://a.wunderlist.com/api/v1/tasks/"
-   (json-encode '(("list_id" . 371687651) ("title" . "foo bar baz")))
-   'ewl-display-response))
+   'ewl-display-response
+   "POST"
+   (json-encode '(("list_id" . 371687651) ("title" . "foo bar baz")))))
 
-(ewl-create-task)
+;(ewl-create-task)
 ;(print (concat "body="))

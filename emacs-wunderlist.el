@@ -2,7 +2,7 @@
 ;; 1: DONE
 ;; Create major mode DONE
 ;; set major mode in the buffer I create DONE
-;; Open that DONE
+; Open that DONE
 ;; allow "q" to close buffer/window DONE
 ;;
 ;; 2:
@@ -106,7 +106,7 @@
 
 (defun ewl-get-lists ()
   "Retrieve all lists"
-  (ewl-url-retrieve ewl-url-get-lists "GET"))
+  (ewl-url-retrieve ewl-url-get-lists "GET" 'ewl-display-response))
 
 ;; This does not work properly
 (defun ewl-delete-task (ewl-task-id)
@@ -145,29 +145,33 @@
   (let ((id (plist-get task-data 'id))
         (title (plist-get task-data 'title)))
     (propertize title 'id id)))
-  ;(list
-  ; (plist-get task-data 'id)
-  ; (plist-get task-data 'title)))
 
 (defun ewl-display-tasks (task-list)
   "Foobarf"
   (setq buffer-read-only nil)
   (while task-list
     (let* ((title (car task-list)))
-      (print title)
-      (print (get-text-property 0 'id title))
       (insert (concat title "\n")))
     (setq task-list (cdr task-list)))
   (setq buffer-read-only t))
 
-;; Evil mode will override this
-;; It's up to the user to handle evil mode in their configs
-(defvar ewl-mode-map
+(defun ewl--get-mode-map ()
+  "Turn this into a function so it can refresh for dev purposes"
   (let ((map (make-sparse-keymap)))
     (define-key map "q"
       (lambda() (interactive) (quit-window t (selected-window))))
-    map)
-  "Get the keymap for the ewl window")
+    (define-key map "\r" (lambda() (interactive) (ewl--get-id-from-thing)))
+    map))
+
+(defun ewl--get-id-from-thing ()
+  "Get id text property of thing at point."
+  (let* ((text-string (thing-at-point 'word))
+         (id (get-text-property 1 'id text-string)))
+    (ewl-get-tasks-for-list id)))
+
+;; Evil mode will override this
+;; It's up to the user to handle evil mode in their configs
+(defvar ewl-mode-map (ewl--get-mode-map) "Get the keymap for the ewl window")
 
 (define-derived-mode ewl-mode nil "EWL"
   "A major mode for the ewl task buffer.
@@ -176,7 +180,7 @@ The following keys are available in `ewl-mode':
   (setq truncate-lines t))
 
 ;; ewl-sample-list-id comes from setup.el
-(ewl-get-tasks-for-list ewl-sample-list-id)
+;(ewl-get-tasks-for-list ewl-sample-list-id)
 ;(ewl-get-folders)
-;(ewl-get-lists)
 ;(ewl-get-task 4372769545)
+(ewl-get-lists)

@@ -1,3 +1,6 @@
+;; NOTE TO SELF: You left off trying to format
+;; a JSON payload to post to create a new task
+;;
 ;; TODO:
 ;; 1: DONE
 ;; Create major mode DONE

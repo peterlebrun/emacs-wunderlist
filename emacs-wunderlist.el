@@ -2,16 +2,17 @@
 ;; 1: DONE
 ;; Create major mode DONE
 ;; set major mode in the buffer I create DONE
-; Open that DONE
+;; Open that DONE
 ;; allow "q" to close buffer/window DONE
 ;;
 ;; 2:
 ;; Pivot and format data to display list of tasks DONE
 ;;
 ;; 3:
-;; Propertize data so that task contains task ID and list ID
+;; Propertize data so that task contains task ID and list ID DONE
 ;;
-;; 4
+;; NOTE TO SELF: Both 4 & 5 will require creating
+;; 4:
 ;; Read from buffer to create new task for list
 ;;
 ;; 5a:
@@ -20,7 +21,7 @@
 ;; Mark task done (bind to key)
 ;;
 ;; 6:
-;; Delete task
+;; Delete task ;; I've got this request forming but HTTP request isn't working :/
 ;;
 ;; 7:
 ;; Move task to new list
@@ -70,9 +71,14 @@
           (url-build-query-string `((list_id ,ewl-list-id)))))
 
 (defun ewl-url-retrieve (url method cb)
+  ""
   (let ((url-request-method method)
         (url-request-extra-headers (ewl--get-auth-headers)))
     (url-retrieve url cb)))
+
+(defun ewl-url-retrieve-post (url data cb)
+  ""
+  (let ((url-request-data data)) (ewl-url-retrieve url "POST" cb)))
 
 (defun ewl-display-response (response)
   (let ((json-data (ewl-process-response response)))
@@ -117,10 +123,6 @@
 (defun ewl-get-task (ewl-task-id)
   "Delete a task"
   (ewl-url-retrieve (ewl--get-url-specific-task ewl-task-id) "GET"))
-
-;(defun ewl-create-task (ewl-task-id)
-;  "Delete a task"
-;  (ewl-url-retrieve (ewl--get-url-specific-task ewl-task-id) "POST"))
 
 (defun ewl-prepare-display-buffer ()
   (let ((buf (get-buffer-create ewl-task-buffer-name)))
@@ -180,7 +182,18 @@ The following keys are available in `ewl-mode':
   (setq truncate-lines t))
 
 ;; ewl-sample-list-id comes from setup.el
-;(ewl-get-tasks-for-list ewl-sample-list-id)
-;(ewl-get-folders)
-;(ewl-get-task 4372769545)
-(ewl-get-lists)
+;; (ewl-get-tasks-for-list ewl-sample-list-id)
+;; (ewl-get-folders)
+;; (ewl-get-task 4372769545)
+;; (ewl-get-lists)
+
+(defun ewl-create-task ()
+  ""
+  ;; (print (concat "body="))); (json-encode-string "{'list_id': 371687651, 'title': 'foo bar baz'}"))))
+  (ewl-url-retrieve-post
+   "https://a.wunderlist.com/api/v1/tasks/"
+   (json-encode '(("list_id" . 371687651) ("title" . "foo bar baz")))
+   'ewl-display-response))
+
+(ewl-create-task)
+;(print (concat "body="))

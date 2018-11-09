@@ -33,7 +33,10 @@
 ;; Cache responses (when appropriate) to reduce HTTP calls
 ;;
 ;; 9:
-;; Add README.me to the repo
+;; Add README.me to the repo DONE
+;;
+;; 10:
+;; Alter JSON response parsing to handle other-than-200 requests
 
 ;; Load auth info during development
 (load-file "./setup.el")
@@ -62,16 +65,16 @@
   `(("X-Access-Token" . ,ewl-access-token)
     ("X-Client-Id" . ,ewl-client-id)))
 
-(defvar ewl-url-get-folders "https://a.wunderlist.com/api/v1/folders")
-(defvar ewl-url-get-lists "https://a.wunderlist.com/api/v1/lists")
+(defvar ewl-url-base-api "https://a.wunderlist.com/api/v1/")
+(defvar ewl-url-folders (concat ewl-url-base-api "folders"))
+(defvar ewl-url-lists (concat ewl-url-base-api "lists"))
+(defvar ewl-url-tasks (concat ewl-url-base-api "tasks"))
 
-(defun ewl--get-url-specific-task (ewl-task-id)
-  (concat "https://a.wunderlist.com/api/v1/tasks/"
-          (number-to-string ewl-task-id)))
+(defun ewl--url-specific-task (ewl-task-id)
+  (concat (ewl-url-tasks "/" (number-to-string ewl-task-id))))
 
-(defun ewl--get-url-tasks-for-list (ewl-list-id)
-  (concat "https://a.wunderlist.com/api/v1/tasks?"
-          (url-build-query-string `((list_id ,ewl-list-id)))))
+(defun ewl--url-tasks-for-list (ewl-list-id)
+  (concat ewl-url-tasks "?" (url-build-query-string `((list_id ,ewl-list-id)))))
 
 (defun ewl-url-retrieve (url cb &optional method data)
   ""
@@ -107,21 +110,21 @@
 
 (defun ewl-get-folders ()
   "Retrieve all lists"
-  (ewl-url-retrieve ewl-url-get-folders))
+  (ewl-url-retrieve ewl-url-lists))
 
 (defun ewl-get-lists ()
   "Retrieve all lists"
-  (ewl-url-retrieve ewl-url-get-lists 'ewl-display-response))
+  (ewl-url-retrieve ewl-url-lists 'ewl-display-response))
 
 ;; This does not work properly
-(defun ewl-delete-task (ewl-task-id)
+(defun ewl-delete-task (task-id)
   "Delete a task"
-  (ewl-url-retrieve (ewl--get-url-specific-task ewl-task-id) "DELETE"))
+  (ewl-url-retrieve (ewl--url-specific-task task-id) "DELETE"))
 
 ;; This seems to work
-(defun ewl-get-task (ewl-task-id)
+(defun ewl-get-task (task-id)
   "Delete a task"
-  (ewl-url-retrieve (ewl--get-url-specific-task ewl-task-id)))
+  (ewl-url-retrieve (ewl--url-specific-task task-id)))
 
 (defun ewl-prepare-display-buffer ()
   (let ((buf (get-buffer-create ewl-task-buffer-name)))
@@ -190,10 +193,20 @@ The following keys are available in `ewl-mode':
 (defun ewl-create-task ()
   ""
   (ewl-url-retrieve
-   "https://a.wunderlist.com/api/v1/tasks/"
+   ewl-url-tasks
    'ewl-display-response
    "POST"
-   (json-encode '(("list_id" . 371687651) ("title" . "foo bar baz")))))
+   (json-encode `(("list_id" . ,ewl-sample-list-id) ("title" . "foo bar baz")))))
 
 ;(ewl-create-task)
-;(print (concat "body="))
+
+;(defun ewl-modify-task (task-id &optional completed title list-id)
+  ;""
+  ;(let* ((task (ewl-get-single-task task-id)) ;; need this to get revision
+         ;(current-revision (plist-get task 'revision)))
+    ;(let ((update-data '((revision . (+ current-revision 1))
+                ;(
+  ;(ewl-url-retrieve
+   ;ewl-url-tasks
+   ;'ewl-display-response
+   ;"PATCH"

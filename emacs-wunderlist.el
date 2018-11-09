@@ -72,7 +72,7 @@
 (defvar ewl-url-tasks (concat ewl-url-base-api "tasks"))
 
 (defun ewl--url-specific-task (task-id)
-  (concat (ewl-url-tasks "/" (number-to-string task-id))))
+  (concat ewl-url-tasks "/" (number-to-string task-id)))
 
 (defun ewl--url-tasks-for-list (list-id)
   (concat ewl-url-tasks "?" (url-build-query-string `((list_id ,list-id)))))
@@ -85,6 +85,7 @@
     (url-retrieve url cb)))
 
 (defun ewl-display-response (response)
+  (debug response)
   (let ((json-data (ewl-process-response response)))
     (if json-data
         (with-current-buffer (ewl-prepare-display-buffer)
@@ -189,7 +190,7 @@ The following keys are available in `ewl-mode':
 ;; (ewl-get-tasks-for-list ewl-sample-list-id)
 ;; (ewl-get-folders)
 ;; (ewl-get-task 4372769545)
-(ewl-get-lists)
+;(ewl-get-lists)
 
 (defun ewl-create-task (list-id task-title)
   ""
@@ -201,23 +202,25 @@ The following keys are available in `ewl-mode':
 
 ;(ewl-create-task)
 
-(defun ewl-mark-task-complete (task-id)
-  "Mark a task complete"
-  (ewl-modify-task task-id t))
+;(defun ewl-mark-task-complete (task-id)
+;  "Mark a task complete"
+;  (ewl-modify-task task-id t))
 
 (defun ewl-get-single-task (task-id)
   "Return plist of data representing task specified by TASK-ID."
   (ewl-url-retrieve (ewl-url-specific-task task-id) 'ewl-process-response))
 
-;(defun ewl-modify-task (task-id &optional completed) ;;  title list-id)
-;  "Modify an existing task to do one of: mark complete, edit name, or change list"
-;  (let* ((task (ewl-get-single-task task-id)) ;; need this to get revision
-;         (current-revision (plist-get task 'revision)))
-;    (let ((update-data '((revision . (+ current-revision 1))
-;                         (completed . (or completed nil)))))
-;      (ewl-url-retrieve
+(defun ewl-mark-task-complete (task-id)
+  ""
+  (ewl-url-retrieve
+   (ewl--url-specific-task task-id)
+   (lambda(response)
+     (let* ((task-data (ewl-process-response response))
+            (task-revision (plist-get task-data 'revision))
+            (task-id (plist-get task-data 'id))
+            (url (ewl--url-specific-task task-id))
+            (data `((revision . ,task-revision)
+                    (completed . ,t))))
+       (ewl-url-retrieve url 'ewl-display-response "PATCH" (json-encode data))))))
 
-  ;(ewl-url-retrieve
-   ;ewl-url-tasks
-   ;'ewl-display-response
-   ;"PATCH"
+(ewl-mark-task-complete 4372770057)

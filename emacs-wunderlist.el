@@ -63,18 +63,19 @@
 (defun ewl--get-auth-headers ()
   "A nice function to return a list of auth headers."
   `(("X-Access-Token" . ,ewl-access-token)
-    ("X-Client-Id" . ,ewl-client-id)))
+    ("X-Client-Id" . ,ewl-client-id)
+    ("Content-Type" . "application/json")))
 
 (defvar ewl-url-base-api "https://a.wunderlist.com/api/v1/")
 (defvar ewl-url-folders (concat ewl-url-base-api "folders"))
 (defvar ewl-url-lists (concat ewl-url-base-api "lists"))
 (defvar ewl-url-tasks (concat ewl-url-base-api "tasks"))
 
-(defun ewl--url-specific-task (ewl-task-id)
-  (concat (ewl-url-tasks "/" (number-to-string ewl-task-id))))
+(defun ewl--url-specific-task (task-id)
+  (concat (ewl-url-tasks "/" (number-to-string task-id))))
 
-(defun ewl--url-tasks-for-list (ewl-list-id)
-  (concat ewl-url-tasks "?" (url-build-query-string `((list_id ,ewl-list-id)))))
+(defun ewl--url-tasks-for-list (list-id)
+  (concat ewl-url-tasks "?" (url-build-query-string `((list_id ,list-id)))))
 
 (defun ewl-url-retrieve (url cb &optional method data)
   ""
@@ -110,7 +111,7 @@
 
 (defun ewl-get-folders ()
   "Retrieve all lists"
-  (ewl-url-retrieve ewl-url-lists))
+  (ewl-url-retrieve ewl-url-folders 'ewl-display-response))
 
 (defun ewl-get-lists ()
   "Retrieve all lists"
@@ -190,22 +191,32 @@ The following keys are available in `ewl-mode':
 ;; (ewl-get-task 4372769545)
 (ewl-get-lists)
 
-(defun ewl-create-task ()
+(defun ewl-create-task (list-id task-title)
   ""
   (ewl-url-retrieve
    ewl-url-tasks
    'ewl-display-response
    "POST"
-   (json-encode `(("list_id" . ,ewl-sample-list-id) ("title" . "foo bar baz")))))
+   (json-encode `((list_id . ,list-id) (title . ,task-title)))))
 
 ;(ewl-create-task)
 
-;(defun ewl-modify-task (task-id &optional completed title list-id)
-  ;""
-  ;(let* ((task (ewl-get-single-task task-id)) ;; need this to get revision
-         ;(current-revision (plist-get task 'revision)))
-    ;(let ((update-data '((revision . (+ current-revision 1))
-                ;(
+(defun ewl-mark-task-complete (task-id)
+  "Mark a task complete"
+  (ewl-modify-task task-id t))
+
+(defun ewl-get-single-task (task-id)
+  "Return plist of data representing task specified by TASK-ID."
+  (ewl-url-retrieve (ewl-url-specific-task task-id) 'ewl-process-response))
+
+;(defun ewl-modify-task (task-id &optional completed) ;;  title list-id)
+;  "Modify an existing task to do one of: mark complete, edit name, or change list"
+;  (let* ((task (ewl-get-single-task task-id)) ;; need this to get revision
+;         (current-revision (plist-get task 'revision)))
+;    (let ((update-data '((revision . (+ current-revision 1))
+;                         (completed . (or completed nil)))))
+;      (ewl-url-retrieve
+
   ;(ewl-url-retrieve
    ;ewl-url-tasks
    ;'ewl-display-response

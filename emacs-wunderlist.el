@@ -1,6 +1,3 @@
-;; NOTE TO SELF: You left off trying to format
-;; a JSON payload to post to create a new task
-;;
 ;; TODO:
 ;; 1: DONE
 ;; Create major mode DONE
@@ -19,7 +16,7 @@
 ;; Read from buffer to create new task for list
 ;;
 ;; 5a:
-;; Mark task done (API Call)
+;; Mark task done (API Call) DONE
 ;; 5b:
 ;; Mark task done (bind to key)
 ;;
@@ -27,7 +24,7 @@
 ;; Delete task ;; I've got this request forming but HTTP request isn't working :/
 ;;
 ;; 7:
-;; Move task to new list
+;; Move task to new list (Extend method `ewl-mark-task-complete` from 5a for this)
 ;;
 ;; 8:
 ;; Cache responses (when appropriate) to reduce HTTP calls

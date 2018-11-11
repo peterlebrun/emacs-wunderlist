@@ -34,6 +34,10 @@
 ;;
 ;; 10:
 ;; Alter JSON response parsing to handle other-than-200 requests
+;;
+;; Optimal flow: command opens buffer of lists.  Select a list, and see the
+;; tasks from that list.  Have a variety of keybindings available to move,
+;; complete, prioritize, delete
 
 ;; Load auth info during development
 (load-file "./setup.el")

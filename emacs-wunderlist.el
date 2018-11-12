@@ -203,16 +203,12 @@ The following keys are available in `ewl-mode':
 
 ;(ewl-create-task)
 
-;(defun ewl-mark-task-complete (task-id)
-;  "Mark a task complete"
-;  (ewl-modify-task task-id t))
-
 (defun ewl-get-single-task (task-id)
   "Return plist of data representing task specified by TASK-ID."
   (ewl-url-retrieve (ewl-url-specific-task task-id) 'ewl-process-response))
 
 (defun ewl-mark-task-complete (task-id)
-  ""
+  "Mark a task complete"
   (ewl-url-retrieve
    (ewl--url-specific-task task-id)
    (lambda(response)
@@ -224,4 +220,36 @@ The following keys are available in `ewl-mode':
                     (completed . ,t))))
        (ewl-url-retrieve url 'ewl-display-response "PATCH" (json-encode data))))))
 
-(ewl-mark-task-complete 4372770057)
+(defun ewl-update-task (task-id &optional is-complete);  &optional new-title new-list-id)
+  "Update task by HTTP patch-ing data payload"
+  (ewl-url-retrieve
+   (ewl--url-specific-task task-id)
+   (lambda(response)
+     (let* ((task-data (ewl-process-response response))
+            (task-revision (plist-get task-data 'revision))
+            (task-id (plist-get task-data 'id))
+            (url (ewl--url-specific-task task-id))
+            (data `((revision . ,task-revision)
+                    (completed. ,t))))
+       ;;(if is-complete (append data `(completed . ,t)))
+       ;;(if newish-title (append data `(title . ,new-title)))
+       ;(if new-list-id (append data `(list_id . ,new-list-id)))
+
+       (ewl-url-retrieve url 'ewl-display-response "PATCH" (json-encode data))))))
+
+;(defun ewl-patch-task (task-id &optional is-completed new-title new-list-id)
+  ;""
+  ;(lambda(response)
+     ;(let* ((task-data (ewl-process-response response))
+            ;(task-revision (plist-get task-data 'revision))
+            ;(task-id (plist-get task-data 'id))
+            ;(url (ewl--url-specific-task task-id))
+            ;(data `((revision . ,task-revision))))
+       ;;;(if is-complete (append data `(completed . ,t)))
+       ;;;(if newish-title (append data `(title . ,new-title)))
+       ;;(if new-list-id (append data `(list_id . ,new-list-id)))
+;
+       ;(ewl-url-retrieve url 'ewl-display-response "PATCH" (json-encode data))))))
+
+;(ewl-mark-task-complete 4372770057)
+(ewl-update-task 4372770057);  "brand new title")

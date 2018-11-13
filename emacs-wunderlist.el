@@ -222,31 +222,18 @@ The following keys are available in `ewl-mode':
 
 (defun ewl-update-task (task-id)
   "Update task by HTTP patch-ing data payload"
+  (defun inner-method (response)
+    (let* ((task-data (ewl-process-response response))
+           (task-revision (plist-get task-data 'revision))
+           (task-id (plist-get task-data 'id))
+           (url (ewl--url-specific-task task-id))
+           (data `((revision . ,task-revision)
+                   (completed . ,t))))
+      (ewl-url-retrieve url 'ewl-display-response "PATCH" (json-encode data))))
+
   (ewl-url-retrieve
    (ewl--url-specific-task task-id)
-   (lambda(response)
-     (let* ((task-data (ewl-process-response response))
-            (task-revision (plist-get task-data 'revision))
-            ;(task-id (plist-get task-data 'id))
-            (url (ewl--url-specific-task task-id))
-            (data `((revision . ,task-revision)
-                    (completed. ,t))))
+   'inner-method))
 
-       (ewl-url-retrieve url 'ewl-display-response "PATCH" (json-encode data))))))
-
-;(defun ewl-patch-task (task-id &optional is-completed new-title new-list-id)
-  ;""
-  ;(lambda(response)
-     ;(let* ((task-data (ewl-process-response response))
-            ;(task-revision (plist-get task-data 'revision))
-            ;(task-id (plist-get task-data 'id))
-            ;(url (ewl--url-specific-task task-id))
-            ;(data `((revision . ,task-revision))))
-       ;;;(if is-complete (append data `(completed . ,t)))
-       ;;;(if newish-title (append data `(title . ,new-title)))
-       ;;(if new-list-id (append data `(list_id . ,new-list-id)))
-;
-       ;(ewl-url-retrieve url 'ewl-display-response "PATCH" (json-encode data))))))
-
-;(ewl-mark-task-complete 4372770057)
-(ewl-update-task 4372770057);  "brand new title")
+;(ewl-update-task 4372770057);  "brand new title")
+(ewl-update-task 4372769545)

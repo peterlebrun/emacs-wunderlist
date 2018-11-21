@@ -1,3 +1,5 @@
+;;; -*- lexical-binding: t -*-
+
 ;; TODO:
 ;; 1: DONE
 ;; Create major mode DONE
@@ -86,7 +88,6 @@
     (url-retrieve url cb)))
 
 (defun ewl-display-response (response)
-  (debug response)
   (let ((json-data (ewl-process-response response)))
     (if json-data
         (with-current-buffer (ewl-prepare-display-buffer)
@@ -201,39 +202,47 @@ The following keys are available in `ewl-mode':
    "POST"
    (json-encode `((list_id . ,list-id) (title . ,task-title)))))
 
-;(ewl-create-task)
-
 (defun ewl-get-single-task (task-id)
   "Return plist of data representing task specified by TASK-ID."
   (ewl-url-retrieve (ewl-url-specific-task task-id) 'ewl-process-response))
 
-(defun ewl-mark-task-complete (task-id)
-  "Mark a task complete"
+(defun ewl-update-task (task-id &optional is-complete new-title new-list-id)
+  "Update task by HTTP patch-ing data payload"
   (ewl-url-retrieve
    (ewl--url-specific-task task-id)
-   (lambda(response)
+   (lambda (response)
      (let* ((task-data (ewl-process-response response))
             (task-revision (plist-get task-data 'revision))
-            (task-id (plist-get task-data 'id))
             (url (ewl--url-specific-task task-id))
-            (data `((revision . ,task-revision)
-                    (completed . ,t))))
+            (data `((revision . ,task-revision))))
+
+       (if is-complete (nconc data `((completed . ,t))))
+       (if new-title (nconc data `((title . ,new-title))))
+       (if new-list-id (nconc data `((list_id . ,new-list-id))))
+
        (ewl-url-retrieve url 'ewl-display-response "PATCH" (json-encode data))))))
 
-(defun ewl-update-task (task-id)
-  "Update task by HTTP patch-ing data payload"
-  (defun inner-method (response)
-    (let* ((task-data (ewl-process-response response))
-           (task-revision (plist-get task-data 'revision))
-           (task-id (plist-get task-data 'id))
-           (url (ewl--url-specific-task task-id))
-           (data `((revision . ,task-revision)
-                   (completed . ,t))))
-      (ewl-url-retrieve url 'ewl-display-response "PATCH" (json-encode data))))
+;; @TODO I'd like to see this be a toggle instead
+(defun ewl-mark-task-complete (task-id)
+  "Mark a task complete"
+  (ewl-update-task task-id t))
 
-  (ewl-url-retrieve
-   (ewl--url-specific-task task-id)
-   'inner-method))
+(defun ewl-update-task-text (task-id new-text)
+  "Update text of task"
+  (ewl-update-task task-id nil new-text))
+
+(defun ewl-move-task-to-new-list (task-id new-list-id)
+  "Move task to a different list"
+  (ewl-update-task task-id nil nil new-list-id))
 
 ;(ewl-update-task 4372770057);  "brand new title")
-(ewl-update-task 4372769545)
+;;(ewl-update-task 4372769545 t)
+;;(ewl-update-task 4372769545 nil "brand new title")
+;;(ewl-update-task 4372769545 nil "eat fruit")
+;;(ewl-update-task 4372769545 nil nil fake-id)
+;;(ewl-update-task
+;;(ewl-mark-task-complete ewl-sample-task-id)
+;;(ewl-update-task-text ewl-sample-task-id "brand new title")
+;;(ewl-move-task-to-new-list ewl-sample-task-id ewl-sample-new-list-id)
+;;(ewl-update-task-text 4372769545 "brand new title")
+;;(ewl-update-task ewl-sample-task-id t "brand new title" ewl-sample-new-list-id)

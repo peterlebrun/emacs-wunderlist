@@ -20,7 +20,7 @@
 ;; 5a:
 ;; Mark task done (API Call) DONE
 ;; 5b:
-;; Mark task done (bind to key)
+;; Mark task done (bind to key) DONE
 ;;
 ;; 6:
 ;; Delete task ;; I've got this request forming but HTTP request isn't working :/
@@ -172,13 +172,16 @@
       (lambda() (interactive) (quit-window t (selected-window))))
     (define-key map "\r"
       (lambda() (interactive) (ewl--get-id-from-thing-at-point)))
+      ;;(lambda() (interactive) (ewl--decide-what-to-do)))
     map))
 
 (defun ewl--get-id-from-thing-at-point ()
   "Get id text property of thing at point."
   (let* ((text-string (thing-at-point 'word))
-         (id (get-text-property 1 'id text-string)))
-    (ewl-get-tasks-for-list id)))
+         (id (get-text-property 1 'id text-string))
+         (type (get-text-property 1 'type text-string)))
+    (if (equal type "list") (ewl-get-tasks-for-list id))
+    (if (equal type "task") (ewl-mark-task-complete id))))
 
 ;; Evil mode will override this
 ;; It's up to the user to handle evil mode in their configs

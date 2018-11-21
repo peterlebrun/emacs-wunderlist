@@ -172,6 +172,11 @@
       (lambda() (interactive) (quit-window t (selected-window))))
     (define-key map "\r"
       (lambda() (interactive) (ewl--get-id-from-thing-at-point)))
+    ;; (define-key map "\r" mark task complete
+    ;; (define-key map "n" add new task
+    ;; m move to different list
+    ;; p prioritize
+    ;; d delete
       ;;(lambda() (interactive) (ewl--decide-what-to-do)))
     map))
 

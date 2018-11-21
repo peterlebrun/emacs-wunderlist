@@ -26,7 +26,7 @@
 ;; Delete task ;; I've got this request forming but HTTP request isn't working :/
 ;;
 ;; 7:
-;; Move task to new list (Extend method `ewl-mark-task-complete` from 5a for this)
+;; Move task to new list (Extend method `ewl-mark-task-complete` from 5a for this) DONE
 ;;
 ;; 8:
 ;; Cache responses (when appropriate) to reduce HTTP calls
@@ -92,7 +92,7 @@
     (if json-data
         (with-current-buffer (ewl-prepare-display-buffer)
           (setq buffer-read-only nil)
-          (ewl-display-tasks (ewl-prepare-tasks-for-display json-data))
+          (ewl-display-items (ewl-prepare-items-for-display json-data))
           (setq buffer-read-only t)
           (pop-to-buffer (current-buffer)))
       (print "NO DICE FAM"))))
@@ -109,7 +109,7 @@
 
 (defun ewl-get-tasks-for-list (list-id)
   (ewl-url-retrieve
-   (ewl--get-url-tasks-for-list list-id)
+   (ewl--url-tasks-for-list list-id)
    'ewl-display-response))
 
 (defun ewl-get-folders ()
@@ -140,27 +140,29 @@
       (setq buffer-read-only t))
     buf))
 
-(defun ewl-prepare-tasks-for-display (task-list)
+(defun ewl-prepare-items-for-display (item-list)
   "Pivot data into display format"
-  (mapcar (lambda(task-data)
-            (ewl-parse-task task-data))
-          task-list))
+  (mapcar (lambda(item-data)
+            (ewl-parse-item item-data))
+          item-list))
 
 ;; @TODO: Make it so that ewl-get-task
 ;; passes off to this single task
-(defun ewl-parse-task (task-data)
+(defun ewl-parse-item (item-data)
   "Get relevant data for a specific task."
-  (let ((id (plist-get task-data 'id))
-        (title (plist-get task-data 'title)))
-    (propertize title 'id id)))
+  (let ((id (plist-get item-data 'id))
+        (title (plist-get item-data 'title))
+        (type (if (plist-get item-data 'type) (plist-get item-data 'type)
+                  (if (plist-get item-data 'list_id) "task"))))
+    (propertize title 'id id 'type type)))
 
-(defun ewl-display-tasks (task-list)
+(defun ewl-display-items (item-list)
   "Foobarf"
   (setq buffer-read-only nil)
-  (while task-list
-    (let* ((title (car task-list)))
+  (while item-list
+    (let* ((title (car item-list)))
       (insert (concat title "\n")))
-    (setq task-list (cdr task-list)))
+    (setq item-list (cdr item-list)))
   (setq buffer-read-only t))
 
 (defun ewl--get-mode-map ()
@@ -234,6 +236,12 @@ The following keys are available in `ewl-mode':
 (defun ewl-move-task-to-new-list (task-id new-list-id)
   "Move task to a different list"
   (ewl-update-task task-id nil nil new-list-id))
+
+(defun ewl-init ()
+  "Basic entry point"
+  (debug "foo"))
+
+(ewl-get-lists)
 
 ;(ewl-update-task 4372770057);  "brand new title")
 ;;(ewl-update-task 4372769545 t)

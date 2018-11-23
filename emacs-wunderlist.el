@@ -153,8 +153,9 @@
   (let ((id (plist-get item-data 'id))
         (title (plist-get item-data 'title))
         (type (if (plist-get item-data 'type) (plist-get item-data 'type)
-                  (if (plist-get item-data 'list_id) "task"))))
-    (propertize title 'id id 'type type)))
+                (if (plist-get item-data 'list_id) "task")))
+        (list-id (plist-get item-data 'list_id)))
+    (propertize title 'id id 'type type 'list-id list-id)))
 
 (defun ewl-display-items (item-list)
   "Foobarf"
@@ -247,9 +248,9 @@ The following keys are available in `ewl-mode':
 
 (defun ewl-init ()
   "Basic entry point"
-  (debug "foo"))
+  (ewl-get-lists))
 
-(ewl-get-lists)
+(ewl-init)
 
 ;(ewl-update-task 4372770057);  "brand new title")
 ;;(ewl-update-task 4372769545 t)

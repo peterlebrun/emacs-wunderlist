@@ -34,7 +34,7 @@
 ;; Add README.me to the repo DONE
 ;;
 ;; 10:
-;; Alter JSON response parsing to handle other-than-200 requests
+;; Alter JSON response parsing to handle other-than-200 requests (started)
 ;;
 ;; Optimal flow: command opens buffer of lists.  Select a list, and see the
 ;; tasks from that list.  Have a variety of keybindings available to move,
@@ -174,6 +174,8 @@
       (lambda() (interactive) (ewl--get-id-from-thing-at-point)))
     (define-key map "c"
       (lambda() (interactive) (ewl-create-task)))
+    (define-key map "u"
+      (lambda() (interactive) (ewl-get-lists)))
     ;; (define-key map "\r" mark task complete
     ;; (define-key map "n" add new task
     ;; m move to different list
@@ -190,6 +192,14 @@
     (if (equal type "list") (ewl-get-tasks-for-list id))
     (if (equal type "task") (ewl-mark-task-complete id))))
 
+(defun ewl-get-list-id-from-thing-at-point ()
+  "Get list id text property of thing at point."
+  (let* ((text-string (thing-at-point 'word))
+         (type (get-text-property 1 'type text-string)))
+    (if (equal "list" type)
+        (get-text-property 1 'id text-string)
+      (get-text-property 1 'list-id text-string))))
+
 ;; Evil mode will override this
 ;; It's up to the user to handle evil mode in their configs
 (defvar ewl-mode-map (ewl--get-mode-map) "Get the keymap for the ewl window")
@@ -200,19 +210,15 @@ The following keys are available in `ewl-mode':
 \\{ewl-mode-map}"
   (setq truncate-lines t))
 
-;; ewl-sample-list-id comes from setup.el
-;; (ewl-get-tasks-for-list ewl-sample-list-id)
-;; (ewl-get-folders)
-;; (ewl-get-task 4372769545)
-;(ewl-get-lists)
-
-(defun ewl-create-task () ;list-id task-title)
+;; @TODO: Using ewl-process-response like this works, BUT
+;; we need some sort of way to refresh the buffer
+(defun ewl-create-task ()
   ""
   (let ((task-title (read-from-minibuffer "Enter Task: "))
-        (list-id ewl-sample-list-id))
+        (list-id (ewl-get-list-id-from-thing-at-point)))
     (ewl-url-retrieve
      ewl-url-tasks
-     'ewl-display-response
+     'ewl-process-response
      "POST"
      (json-encode `((list_id . ,list-id) (title . ,task-title))))))
 
@@ -267,3 +273,9 @@ The following keys are available in `ewl-mode':
 ;;(ewl-move-task-to-new-list ewl-sample-task-id ewl-sample-new-list-id)
 ;;(ewl-update-task-text 4372769545 "brand new title")
 ;;(ewl-update-task ewl-sample-task-id t "brand new title" ewl-sample-new-list-id)
+
+;; ewl-sample-list-id comes from setup.el
+;; (ewl-get-tasks-for-list ewl-sample-list-id)
+;; (ewl-get-folders)
+;; (ewl-get-task 4372769545)
+;(ewl-get-lists)

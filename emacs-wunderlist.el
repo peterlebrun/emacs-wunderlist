@@ -2,8 +2,7 @@
 
 ;; TODO:
 ;; 1: DONE
-;; Create major mode DONE
-;; set major mode in the buffer I create DONE
+;; Create major mode DONE ;; set major mode in the buffer I create DONE
 ;; Open that DONE
 ;; allow "q" to close buffer/window DONE
 ;;
@@ -100,7 +99,7 @@
 (defun ewl-process-response (response)
  "Extract the JSON response from the buffer returned by url-http."
  (set-buffer-multibyte t)
- (if (re-search-forward "^HTTP/.+ 200 OK$" (line-end-position) t)
+ (if (re-search-forward "^HTTP/.+ 20.*$" (line-end-position) t)
      (when (search-forward "\n\n" nil t)
        (let ((json-object-type 'plist)
              (json-key-type 'symbol)
@@ -173,6 +172,8 @@
       (lambda() (interactive) (quit-window t (selected-window))))
     (define-key map "\r"
       (lambda() (interactive) (ewl--get-id-from-thing-at-point)))
+    (define-key map "c"
+      (lambda() (interactive) (ewl-create-task)))
     ;; (define-key map "\r" mark task complete
     ;; (define-key map "n" add new task
     ;; m move to different list
@@ -205,18 +206,21 @@ The following keys are available in `ewl-mode':
 ;; (ewl-get-task 4372769545)
 ;(ewl-get-lists)
 
-(defun ewl-create-task (list-id task-title)
+(defun ewl-create-task () ;list-id task-title)
   ""
-  (ewl-url-retrieve
-   ewl-url-tasks
-   'ewl-display-response
-   "POST"
-   (json-encode `((list_id . ,list-id) (title . ,task-title)))))
+  (let ((task-title (read-from-minibuffer "Enter Task: "))
+        (list-id ewl-sample-list-id))
+    (ewl-url-retrieve
+     ewl-url-tasks
+     'ewl-display-response
+     "POST"
+     (json-encode `((list_id . ,list-id) (title . ,task-title))))))
 
 (defun ewl-get-single-task (task-id)
   "Return plist of data representing task specified by TASK-ID."
   (ewl-url-retrieve (ewl-url-specific-task task-id) 'ewl-process-response))
 
+;; @TODO:
 (defun ewl-update-task (task-id &optional is-complete new-title new-list-id)
   "Update task by HTTP patch-ing data payload"
   (ewl-url-retrieve

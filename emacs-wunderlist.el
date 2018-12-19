@@ -96,15 +96,17 @@
           (pop-to-buffer (current-buffer)))
       (print "NO DICE FAM"))))
 
-(defun ewl-process-response (response)
+(defun ewl-process-response (response &optional cb)
  "Extract the JSON response from the buffer returned by url-http."
  (set-buffer-multibyte t)
  (if (re-search-forward "^HTTP/.+ 20.*$" (line-end-position) t)
      (when (search-forward "\n\n" nil t)
-       (let ((json-object-type 'plist)
-             (json-key-type 'symbol)
-             (json-array-type 'vector))
-         (json-read)))))
+       (prog1
+           (let ((json-object-type 'plist)
+                 (json-key-type 'symbol)
+                 (json-array-type 'vector))
+             (json-read))
+         (if cb (cb))))))
 
 (defun ewl-get-tasks-for-list (list-id)
   (ewl-url-retrieve
@@ -218,9 +220,12 @@ The following keys are available in `ewl-mode':
         (list-id (ewl-get-list-id-from-thing-at-point)))
     (ewl-url-retrieve
      ewl-url-tasks
-     'ewl-process-response
+     'ewl-process-response-and-refresh-list
      "POST"
      (json-encode `((list_id . ,list-id) (title . ,task-title))))))
+
+(defun ewl-process-response-and-refresh-list (response)
+  (ewl-process-response response '(lambda() (ewl-get-tasks-for-list (ewl-get-list-id-from-thing-at-point)))))
 
 (defun ewl-get-single-task (task-id)
   "Return plist of data representing task specified by TASK-ID."
@@ -231,7 +236,7 @@ The following keys are available in `ewl-mode':
   "Update task by HTTP patch-ing data payload"
   (ewl-url-retrieve
    (ewl--url-specific-task task-id)
-   (lambda (response)
+   (lambda(response)
      (let* ((task-data (ewl-process-response response))
             (task-revision (plist-get task-data 'revision))
             (url (ewl--url-specific-task task-id))

@@ -48,12 +48,12 @@
   :group 'tools)
 
 (defcustom ewl-access-token ""
-  "Wunderline access token for API requests."
+  "Wunderlist access token for API requests."
   :group 'ewl
   :type 'string)
 
 (defcustom ewl-client-id ""
-  "Wunderline client id for API requests."
+  "Wunderlist client id for API requests."
   :group 'ewl
   :type 'string)
 

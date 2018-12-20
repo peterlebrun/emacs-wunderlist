@@ -235,7 +235,7 @@ The following keys are available in `ewl-mode':
   (ewl-get-tasks-for-list (ewl-get-list-id-from-thing-at-point)))
 
 (defun ewl-process-response-and-refresh-list (response)
-  (ewl-process-response response 'ewl-who-fuckin-knows))
+  (ewl-process-response response 'ewl-refresh-current-list))
 
 (defun ewl-get-single-task (task-id)
   "Return plist of data representing task specified by TASK-ID."
@@ -278,21 +278,3 @@ The following keys are available in `ewl-mode':
   (ewl-get-lists))
 
 (ewl-init)
-
-;(ewl-update-task 4372770057);  "brand new title")
-;;(ewl-update-task 4372769545 t)
-;;(ewl-update-task 4372769545 nil "brand new title")
-;;(ewl-update-task 4372769545 nil "eat fruit")
-;;(ewl-update-task 4372769545 nil nil fake-id)
-;;(ewl-update-task
-;;(ewl-mark-task-complete ewl-sample-task-id)
-;;(ewl-update-task-text ewl-sample-task-id "brand new title")
-;;(ewl-move-task-to-new-list ewl-sample-task-id ewl-sample-new-list-id)
-;;(ewl-update-task-text 4372769545 "brand new title")
-;;(ewl-update-task ewl-sample-task-id t "brand new title" ewl-sample-new-list-id)
-
-;; ewl-sample-list-id comes from setup.el
-;; (ewl-get-tasks-for-list ewl-sample-list-id)
-;; (ewl-get-folders)
-;; (ewl-get-task 4372769545)
-;(ewl-get-lists)

@@ -74,19 +74,22 @@
 (defvar ewl-url-tasks (concat ewl-url-base-api "tasks"))
 
 (defun ewl--url-specific-task (task-id)
+  "Return API url for specific task"
   (concat ewl-url-tasks "/" (number-to-string task-id)))
 
 (defun ewl--url-tasks-for-list (list-id)
+  "Return API url to get tasks for a specific list"
   (concat ewl-url-tasks "?" (url-build-query-string `((list_id ,list-id)))))
 
 (defun ewl-url-retrieve (url cb &optional method data)
-  ""
+  "Wrap url-retrieve for generic use"
   (let ((url-request-method (or method "GET"))
         (url-request-extra-headers (ewl--get-auth-headers))
         (url-request-data data))
     (url-retrieve url cb)))
 
 (defun ewl-display-response (response)
+  "Parse and display response in window"
   (let ((json-data (ewl-process-response response)))
     (if json-data
         (with-current-buffer (ewl-prepare-display-buffer)

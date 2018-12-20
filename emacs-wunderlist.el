@@ -112,29 +112,26 @@
          (if (fboundp cb) (funcall cb))))))
 
 (defun ewl-get-tasks-for-list (list-id)
+  "Display response for all tasks in a particular list"
   (ewl-url-retrieve
    (ewl--url-tasks-for-list list-id)
    'ewl-display-response))
 
 (defun ewl-get-folders ()
-  "Retrieve all lists"
+  "Retrieve all folders"
   (ewl-url-retrieve ewl-url-folders 'ewl-display-response))
 
 (defun ewl-get-lists ()
   "Retrieve all lists"
   (ewl-url-retrieve ewl-url-lists 'ewl-display-response))
 
-;; This does not work properly
-(defun ewl-delete-task (task-id)
-  "Delete a task"
-  (ewl-url-retrieve (ewl--url-specific-task task-id) "DELETE"))
-
 ;; This seems to work
 (defun ewl-get-task (task-id)
-  "Delete a task"
+  "Get data for particular task"
   (ewl-url-retrieve (ewl--url-specific-task task-id)))
 
 (defun ewl-prepare-display-buffer ()
+  "Create consistent buffer object for displaying data"
   (let ((buf (get-buffer-create ewl-task-buffer-name)))
     (with-current-buffer buf
       (setq buffer-read-only nil)
@@ -150,8 +147,6 @@
             (ewl-parse-item item-data))
           item-list))
 
-;; @TODO: Make it so that ewl-get-task
-;; passes off to this single task
 (defun ewl-parse-item (item-data)
   "Get relevant data for a specific task."
   (let ((id (plist-get item-data 'id))
@@ -162,7 +157,7 @@
     (propertize title 'id id 'type type 'list-id list-id)))
 
 (defun ewl-display-items (item-list)
-  "Foobarf"
+  "Format item data for display in buffer"
   (setq buffer-read-only nil)
   (while item-list
     (let* ((title (car item-list)))
@@ -181,14 +176,13 @@
       (lambda() (interactive) (ewl-create-task)))
     (define-key map "u"
       (lambda() (interactive) (ewl-get-lists)))
-    (define-key map "z"
-      (lambda() (interactive) (ewl-who-fuckin-knows)))
+    (define-key map "d"
+      (lambda() (interactive) (ewl-delete-task-at-point)))
     ;; (define-key map "\r" mark task complete
     ;; (define-key map "n" add new task
     ;; m move to different list
     ;; p prioritize
-    ;; d delete
-      ;;(lambda() (interactive) (ewl--decide-what-to-do)))
+    ;;(lambda() (interactive) (ewl--decide-what-to-do)))
     map))
 
 (defun ewl--get-id-from-thing-at-point ()
@@ -207,9 +201,39 @@
         (get-text-property 1 'id text-string)
       (get-text-property 1 'list-id text-string))))
 
+;; @TODO What the fuck is going on here?
+;; j/k, we needed the current revision in order to delete
+;; This can/should probably be refactored to simplify
+(defun ewl-delete-task-at-point ()
+  "Get task at point and pass data to delete operation"
+  (let* ((text-string (thing-at-point 'word))
+         (id (get-text-property 1 'id text-string))
+         (type (get-text-property 1 'type text-string)))
+    (if (equal "task" type)
+        (ewl-delete-task id)
+      (message "delete-task requires task"))))
+
+;; @TODO: Delete works but list won't refresh
+(defun ewl-delete-task (task-id)
+  "Delete task identified by TASK-ID"
+  (ewl-url-retrieve
+   (ewl--url-specific-task task-id)
+   (lambda(response)
+     (let* ((task-data (ewl-process-response response))
+            (revision (plist-get task-data 'revision))
+            (delete-url (concat
+                         (ewl--url-specific-task task-id)
+                         "?"
+                         (url-build-query-string `((revision ,revision))))))
+       (ewl-url-retrieve
+        delete-url
+        'ewl-process-response-and-refresh-list
+        "DELETE")))))
+
 ;; Evil mode will override this
 ;; It's up to the user to handle evil mode in their configs
-(defvar ewl-mode-map (ewl--get-mode-map) "Get the keymap for the ewl window")
+(defvar ewl-mode-map (ewl--get-mode-map)
+  "Get the keymap for the ewl window")
 
 (define-derived-mode ewl-mode nil "EWL"
   "A major mode for the ewl task buffer.
@@ -232,12 +256,14 @@ The following keys are available in `ewl-mode':
 ;; @NOTE: This works as a callback, but issue is getting
 ;; id of list we want to refresh
 (defun ewl-refresh-current-list ()
+  "Determine what list we're currently in and refresh that data"
   (pop-to-buffer ewl-task-buffer-name)
   (goto-char (point-max))
   (backward-word) ;; Go to the last place we're certain to have a list-id
   (ewl-get-tasks-for-list (ewl-get-list-id-from-thing-at-point)))
 
 (defun ewl-process-response-and-refresh-list (response)
+  "Handle response then refresh current list in window"
   (ewl-process-response response 'ewl-refresh-current-list))
 
 (defun ewl-get-single-task (task-id)
@@ -261,7 +287,11 @@ The following keys are available in `ewl-mode':
        (if new-title (nconc data `((title . ,new-title))))
        (if new-list-id (nconc data `((list_id . ,new-list-id))))
 
-       (ewl-url-retrieve url 'ewl-display-response "PATCH" (json-encode data))))))
+       (ewl-url-retrieve
+        url
+        'ewl-process-response-and-refresh-list
+        "PATCH"
+        (json-encode data))))))
 
 ;; @TODO I'd like to see this be a toggle instead
 (defun ewl-mark-task-complete (task-id)

@@ -217,7 +217,7 @@ The following keys are available in `ewl-mode':
 ;; @TODO: Using ewl-process-response like this works, BUT
 ;; we need some sort of way to refresh the buffer
 (defun ewl-create-task ()
-  ""
+  "Create a new task for the current list"
   (let ((task-title (read-from-minibuffer "Enter Task: "))
         (list-id (ewl-get-list-id-from-thing-at-point)))
     (ewl-url-retrieve
@@ -228,12 +228,11 @@ The following keys are available in `ewl-mode':
 
 ;; @NOTE: This works as a callback, but issue is getting
 ;; id of list we want to refresh
-(defun ewl-who-fuckin-knows ()
-  ;; (debug "FOOBAR")
-  ;;(debug (ewl-get-list-id-from-thing-at-point))
-  ;;(debug (thing-at-point 'word))
-  ;;(ewl-get-tasks-for-list (ewl-get-list-id-from-thing-at-point)))
-  (ewl-get-tasks-for-list ewl-sample-list-id))
+(defun ewl-refresh-current-list ()
+  (pop-to-buffer ewl-task-buffer-name)
+  (goto-char (point-max))
+  (backward-word) ;; Go to the last place we're certain to have a list-id
+  (ewl-get-tasks-for-list (ewl-get-list-id-from-thing-at-point)))
 
 (defun ewl-process-response-and-refresh-list (response)
   (ewl-process-response response 'ewl-who-fuckin-knows))

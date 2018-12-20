@@ -106,7 +106,7 @@
                  (json-key-type 'symbol)
                  (json-array-type 'vector))
              (json-read))
-         (if cb (cb))))))
+         (if (fboundp cb) (funcall cb))))))
 
 (defun ewl-get-tasks-for-list (list-id)
   (ewl-url-retrieve
@@ -178,6 +178,8 @@
       (lambda() (interactive) (ewl-create-task)))
     (define-key map "u"
       (lambda() (interactive) (ewl-get-lists)))
+    (define-key map "z"
+      (lambda() (interactive) (ewl-who-fuckin-knows)))
     ;; (define-key map "\r" mark task complete
     ;; (define-key map "n" add new task
     ;; m move to different list
@@ -224,14 +226,22 @@ The following keys are available in `ewl-mode':
      "POST"
      (json-encode `((list_id . ,list-id) (title . ,task-title))))))
 
+(defun ewl-who-fuckin-knows ()
+  ;; (debug "FOOBAR")
+  ;;(debug (ewl-get-list-id-from-thing-at-point))
+  (debug (thing-at-point 'word))
+  (ewl-get-tasks-for-list (ewl-get-list-id-from-thing-at-point)))
+
 (defun ewl-process-response-and-refresh-list (response)
-  (ewl-process-response response '(lambda() (ewl-get-tasks-for-list (ewl-get-list-id-from-thing-at-point)))))
+  (ewl-process-response response 'ewl-who-fuckin-knows))
 
 (defun ewl-get-single-task (task-id)
   "Return plist of data representing task specified by TASK-ID."
   (ewl-url-retrieve (ewl-url-specific-task task-id) 'ewl-process-response))
 
-;; @TODO:
+;; @TODO: This is currently written to take advantage of
+;; lexical binding; I would like it rewritten to pass
+;; arguments to a callback and not require lexical binding
 (defun ewl-update-task (task-id &optional is-complete new-title new-list-id)
   "Update task by HTTP patch-ing data payload"
   (ewl-url-retrieve

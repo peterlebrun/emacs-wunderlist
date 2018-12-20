@@ -226,11 +226,14 @@ The following keys are available in `ewl-mode':
      "POST"
      (json-encode `((list_id . ,list-id) (title . ,task-title))))))
 
+;; @NOTE: This works as a callback, but issue is getting
+;; id of list we want to refresh
 (defun ewl-who-fuckin-knows ()
   ;; (debug "FOOBAR")
   ;;(debug (ewl-get-list-id-from-thing-at-point))
-  (debug (thing-at-point 'word))
-  (ewl-get-tasks-for-list (ewl-get-list-id-from-thing-at-point)))
+  ;;(debug (thing-at-point 'word))
+  ;;(ewl-get-tasks-for-list (ewl-get-list-id-from-thing-at-point)))
+  (ewl-get-tasks-for-list ewl-sample-list-id))
 
 (defun ewl-process-response-and-refresh-list (response)
   (ewl-process-response response 'ewl-who-fuckin-knows))

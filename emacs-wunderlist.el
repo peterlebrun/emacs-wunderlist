@@ -101,15 +101,19 @@
 
 (defun ewl-process-response (response &optional cb)
  "Extract the JSON response from the buffer returned by url-http."
+ ;(debug response);
  (set-buffer-multibyte t)
  (if (re-search-forward "^HTTP/.+ 20.*$" (line-end-position) t)
-     (when (search-forward "\n\n" nil t)
-       (prog1
-           (let ((json-object-type 'plist)
-                 (json-key-type 'symbol)
-                 (json-array-type 'vector))
-             (json-read))
-         (if (fboundp cb) (funcall cb))))))
+     ;; 204 means no content - trying to json-read 204 response will error
+     (if (string-match-p "^HTTP/.+ 204.*$" (thing-at-point 'line t))
+           (if (fboundp cb) (funcall cb))
+       (when (search-forward "\n\n" nil t)
+         (prog1
+             (let ((json-object-type 'plist)
+                   (json-key-type 'symbol)
+                   (json-array-type 'vector))
+               (json-read))
+           (if (fboundp cb) (funcall cb)))))))
 
 (defun ewl-get-tasks-for-list (list-id)
   "Display response for all tasks in a particular list"

@@ -315,3 +315,14 @@ The following keys are available in `ewl-mode':
   (ewl-get-lists))
 
 (ewl-init)
+
+
+;; Ideally bind to ,-t
+(defun ewl-add-task-to-inbox ()
+  "Add new task to inbox, to be sorted later."
+  )
+
+;; Ideally bind to something like ,-p
+(defun ewl-display-priorities ()
+  "Display only starred priorities."
+  )

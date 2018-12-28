@@ -1,5 +1,11 @@
 ;;; -*- lexical-binding: t -*-
 
+;; @TODO: Current task
+;; Find best way to persist customization data
+;; (i.e. auth tokens, list ID for inbox/starred list)
+
+;; Another thing to do: Can I get the extra data for the task? i.e. note/comment
+;;
 ;; TODO:
 ;; 1: DONE
 ;; Create major mode DONE ;; set major mode in the buffer I create DONE

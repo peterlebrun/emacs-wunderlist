@@ -318,7 +318,7 @@ The following keys are available in `ewl-mode':
   "Basic entry point"
   (ewl-get-lists))
 
-;; Ideally bind to ,-t
+;; Ideally bind to ,-t but this would be handled by the user's config
 (defun ewl-add-task-to-inbox ()
   "Add new task to inbox, to be sorted later."
   (ewl-create-task

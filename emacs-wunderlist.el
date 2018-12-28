@@ -97,11 +97,10 @@
           (ewl-display-items (ewl-prepare-items-for-display json-data))
           (setq buffer-read-only t)
           (pop-to-buffer (current-buffer)))
-      (print "NO DICE FAM"))))
+      (print "Error processing API request"))))
 
 (defun ewl-process-response (response &optional cb)
  "Extract the JSON response from the buffer returned by url-http."
- ;(debug response);
  (set-buffer-multibyte t)
  (if (re-search-forward "^HTTP/.+ 20.*$" (line-end-position) t)
      ;; 204 means no content - trying to json-read 204 response will error
@@ -177,11 +176,13 @@
     (define-key map "\r"
       (lambda() (interactive) (ewl--get-id-from-thing-at-point)))
     (define-key map "c"
-      (lambda() (interactive) (ewl-create-task)))
+      (lambda() (interactive) (ewl-create-task-for-list-at-point)))
     (define-key map "u"
       (lambda() (interactive) (ewl-get-lists)))
     (define-key map "d"
       (lambda() (interactive) (ewl-delete-task-at-point)))
+    (define-key map "t"
+      (lambda() (interactive) (ewl-add-task-to-inbox)))
     ;; (define-key map "\r" mark task complete
     ;; (define-key map "n" add new task
     ;; m move to different list
@@ -245,17 +246,20 @@ The following keys are available in `ewl-mode':
 \\{ewl-mode-map}"
   (setq truncate-lines t))
 
-;; @TODO: Using ewl-process-response like this works, BUT
-;; we need some sort of way to refresh the buffer
-(defun ewl-create-task ()
+(defun ewl-create-task (task-title list-id cb)
+  "Create task from given inputs"
+  (ewl-url-retrieve
+   ewl-url-tasks
+   cb
+   "POST"
+   (json-encode `((list_id . ,list-id) (title . ,task-title)))))
+
+(defun ewl-create-task-for-list-at-point ()
   "Create a new task for the current list"
-  (let ((task-title (read-from-minibuffer "Enter Task: "))
-        (list-id (ewl-get-list-id-from-thing-at-point)))
-    (ewl-url-retrieve
-     ewl-url-tasks
-     'ewl-process-response-and-refresh-list
-     "POST"
-     (json-encode `((list_id . ,list-id) (title . ,task-title))))))
+  (ewl-create-task
+   (read-from-minibuffer "Enter Task: ")
+   (ewl-get-list-id-from-thing-at-point)
+   'ewl-process-response-and-refresh-list))
 
 ;; @NOTE: This works as a callback, but issue is getting
 ;; id of list we want to refresh
@@ -314,15 +318,17 @@ The following keys are available in `ewl-mode':
   "Basic entry point"
   (ewl-get-lists))
 
-(ewl-init)
-
-
 ;; Ideally bind to ,-t
 (defun ewl-add-task-to-inbox ()
   "Add new task to inbox, to be sorted later."
-  )
+  (ewl-create-task
+   (read-from-minibuffer "Enter task: ")
+   ewl-sample-list-id
+   'ewl-process-response))
 
 ;; Ideally bind to something like ,-p
 (defun ewl-display-priorities ()
   "Display only starred priorities."
   )
+
+(ewl-init)

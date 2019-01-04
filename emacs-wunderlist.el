@@ -1,5 +1,6 @@
 ;;; -*- lexical-binding: t -*-
 
+;; @TODO: Persist inbox ID to file
 ;; @TODO: Current task
 ;; Find best way to persist customization data
 ;; (i.e. auth tokens, list ID for inbox/starred list)
@@ -67,6 +68,17 @@
   "Name for the emacs wunderlist buffer."
   :group 'ewl
   :type 'string)
+
+(defcustom ewl-inbox-id nil
+  "ID for inbox list"
+  :group 'ewl
+  :type 'integer)
+
+;;(defcustom ewl-config-file (concat user-emacs-directory
+  ;;"*ewl-task-buffer*"
+  ;;"Name for the emacs wunderlist buffer."
+  ;;:group 'ewl
+  ;;:type 'string)
 
 (defun ewl--get-auth-headers ()
   "A nice function to return a list of auth headers."
@@ -337,4 +349,19 @@ The following keys are available in `ewl-mode':
   "Display only starred priorities."
   )
 
-(ewl-init)
+;;(ewl-init)
+
+(defun ewl-get-inbox-id (response)
+  "Parse response of lists API to determine inbox ID"
+  (let ((lists-data (ewl-process-response response))
+        (found-inbox nil)
+        (i 0))
+    (while (and (not found-inbox) (<= i (length lists-data)))
+      (let* ((list-data (elt lists-data i)))
+        (when (equal (plist-get list-data 'list_type) "inbox")
+          (setq ewl-inbox-id (plist-get list-data 'id))
+          (setq found-inbox t))
+        (setq i (+ 1 i))))))
+
+(ewl-url-retrieve ewl-url-lists 'ewl-get-inbox-id)
+(debug ewl-inbox-id)

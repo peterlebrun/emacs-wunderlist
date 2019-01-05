@@ -64,21 +64,20 @@
   :group 'ewl
   :type 'string)
 
-(defcustom ewl-task-buffer-name "*ewl-task-buffer*"
-  "Name for the emacs wunderlist buffer."
-  :group 'ewl
-  :type 'string)
-
 (defcustom ewl-inbox-id nil
   "ID for inbox list"
   :group 'ewl
   :type 'integer)
 
-;;(defcustom ewl-config-file (concat user-emacs-directory
-  ;;"*ewl-task-buffer*"
-  ;;"Name for the emacs wunderlist buffer."
-  ;;:group 'ewl
-  ;;:type 'string)
+(defcustom ewl-task-buffer-name "*ewl-task-buffer*"
+  "Name for the emacs wunderlist buffer."
+  :group 'ewl
+  :type 'string)
+
+(defcustom ewl-config-file (concat user-emacs-directory "emacs-wunderlist-config.el")
+  "Location to persist config information for this plugin"
+  :group 'ewl
+  :type 'string)
 
 (defun ewl--get-auth-headers ()
   "A nice function to return a list of auth headers."
@@ -334,14 +333,16 @@ The following keys are available in `ewl-mode':
 
 (defun ewl-init ()
   "Basic entry point"
+  (ewl-ensure-inbox-id)
   (ewl-get-lists))
 
 ;; Ideally bind to ,-t but this would be handled by the user's config
 (defun ewl-add-task-to-inbox ()
   "Add new task to inbox, to be sorted later."
+  (ewl-ensure-inbox-id)
   (ewl-create-task
    (read-from-minibuffer "Enter task: ")
-   ewl-sample-list-id
+   ewl-inbox-id
    'ewl-process-response))
 
 ;; Ideally bind to something like ,-p
@@ -349,7 +350,10 @@ The following keys are available in `ewl-mode':
   "Display only starred priorities."
   )
 
-;;(ewl-init)
+(defun ewl-ensure-inbox-id ()
+  "Ensure that ewl-inbox-id is populated"
+  (if (not ewl-inbox-id)
+      (ewl-url-retrieve ewl-url-lists 'ewl-get-inbox-id)))
 
 (defun ewl-get-inbox-id (response)
   "Parse response of lists API to determine inbox ID"
@@ -362,6 +366,3 @@ The following keys are available in `ewl-mode':
           (setq ewl-inbox-id (plist-get list-data 'id))
           (setq found-inbox t))
         (setq i (+ 1 i))))))
-
-(ewl-url-retrieve ewl-url-lists 'ewl-get-inbox-id)
-(debug ewl-inbox-id)

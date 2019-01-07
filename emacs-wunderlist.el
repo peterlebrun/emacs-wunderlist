@@ -366,3 +366,5 @@ The following keys are available in `ewl-mode':
           (setq ewl-inbox-id (plist-get list-data 'id))
           (setq found-inbox t))
         (setq i (+ 1 i))))))
+
+(ewl-init)

@@ -64,18 +64,18 @@
   :group 'ewl
   :type 'string)
 
-(defcustom ewl-gtd-inbox-list-id nil
-  "ID for list named gtd-inbox"
+(defcustom ewl-list-id-inbox nil
+  "ID for inbox list"
   :group 'ewl
   :type 'integer)
 
-(defcustom ewl-gtd-priorities-list-id nil
-  "ID for list named gtd-priorities"
+(defcustom ewl-list-id-priorities nil
+  "ID for priorities list"
   :group 'ewl
   :type 'integer)
 
-(defcustom ewl-gtd-backlog-list-id nil
-  "ID for list named gtd-backlog"
+(defcustom ewl-list-id-backlog nil
+  "ID for backlog list"
   :group 'ewl
   :type 'integer)
 
@@ -86,6 +86,21 @@
 
 (defcustom ewl-config-file (concat user-emacs-directory "emacs-wunderlist-config.el")
   "Location to persist config information for this plugin"
+  :group 'ewl
+  :type 'string)
+
+(defcustom ewl-list-name-inbox "gtd-inbox"
+  "Name given to the inbox list."
+  :group 'ewl
+  :type 'string)
+
+(defcustom ewl-list-name-priorities "gtd-priorities"
+  "Name given to the priorities list."
+  :group 'ewl
+  :type 'string)
+
+(defcustom ewl-list-name-backlog "gtd-backlog"
+  "Name given to the backlog list."
   :group 'ewl
   :type 'string)
 
@@ -198,23 +213,18 @@
 (defun ewl--get-mode-map ()
   "Turn this into a function so it can refresh for dev purposes"
   (let ((map (make-sparse-keymap)))
-    (define-key map "q"
-      (lambda() (interactive) (quit-window t (selected-window))))
-    (define-key map "\r"
-      (lambda() (interactive) (ewl--get-id-from-thing-at-point)))
+    (define-key map "t"
+      (lambda() (interactive) (ewl-add-new-task-to-inbox)))
     (define-key map "c"
-      (lambda() (interactive) (ewl-create-task-for-list-at-point)))
-    (define-key map "u"
-      (lambda() (interactive) (ewl-get-lists)))
+      (lambda() (interactive) (ewl-mark-task-at-point-complete)))
     (define-key map "d"
       (lambda() (interactive) (ewl-delete-task-at-point)))
-    (define-key map "t"
-      (lambda() (interactive) (ewl-add-task-to-inbox)))
-    ;; (define-key map "\r" mark task complete
-    ;; (define-key map "n" add new task
-    ;; m move to different list
-    ;; p prioritize
-    ;;(lambda() (interactive) (ewl--decide-what-to-do)))
+    (define-key map "p"
+      (lambda() (interactive) (ewl-prioritize-task-at-point)))
+    (define-key map "b"
+      (lambda() (interactive) (ewl-backlog-task-at-point)))
+    (define-key map "q"
+      (lambda() (interactive) (quit-window t (selected-window))))
     map))
 
 (defun ewl--get-id-from-thing-at-point ()
@@ -232,35 +242,6 @@
     (if (equal "list" type)
         (get-text-property 1 'id text-string)
       (get-text-property 1 'list-id text-string))))
-
-;; @TODO What the fuck is going on here?
-;; j/k, we needed the current revision in order to delete
-;; This can/should probably be refactored to simplify
-(defun ewl-delete-task-at-point ()
-  "Get task at point and pass data to delete operation"
-  (let* ((text-string (thing-at-point 'word))
-         (id (get-text-property 1 'id text-string))
-         (type (get-text-property 1 'type text-string)))
-    (if (equal "task" type)
-        (ewl-delete-task id)
-      (message "delete-task requires task"))))
-
-;; @TODO: Delete works but list won't refresh
-(defun ewl-delete-task (task-id)
-  "Delete task identified by TASK-ID"
-  (ewl-url-retrieve
-   (ewl--url-specific-task task-id)
-   (lambda(response)
-     (let* ((task-data (ewl-process-response response))
-            (revision (plist-get task-data 'revision))
-            (delete-url (concat
-                         (ewl--url-specific-task task-id)
-                         "?"
-                         (url-build-query-string `((revision ,revision))))))
-       (ewl-url-retrieve
-        delete-url
-        'ewl-process-response-and-refresh-list
-        "DELETE")))))
 
 ;; Evil mode will override this
 ;; It's up to the user to handle evil mode in their configs
@@ -341,21 +322,12 @@ The following keys are available in `ewl-mode':
   "Move task to a different list"
   (ewl-update-task task-id nil nil new-list-id))
 
-;; Ideally bind to ,-t but this would be handled by the user's config
-(defun ewl-add-task-to-inbox ()
-  "Add new task to inbox, to be sorted later."
-  (ewl-ensure-list-ids)
-  (ewl-create-task
-   (read-from-minibuffer "Enter task: ")
-   ewl-gtd-inbox-list-id
-   'ewl-process-response))
-
 (defun ewl-ensure-list-ids ()
-  "Ensure that ewl-inbox-id is populated"
+  "Ensure that necessary list IDs are populated"
   (if (or
-       (not ewl-gtd-inbox-list-id)
-       (not ewl-gtd-priorities-list-id)
-       (not ewl-gtd-backlog-list-id))
+       (not ewl-list-id-inbox)
+       (not ewl-list-id-priorities)
+       (not ewl-list-id-backlog))
       (ewl-url-retrieve ewl-url-lists 'ewl-load-list-ids)))
 
 ;; @TODO: If list IDs are null after this
@@ -363,34 +335,99 @@ The following keys are available in `ewl-mode':
 (defun ewl-load-list-ids (response)
   "Parse response of lists API to determine inbox ID"
   (let ((lists-data (ewl-process-response response))
-        (found-gtd-inbox-list-id nil)
-        (found-gtd-priorities-list-id nil)
-        (found-gtd-backlog-list-id nil)
+        (found-list-id-inbox nil)
+        (found-list-id-priorities nil)
+        (found-list-id-backlog nil)
         (i 0))
     (while (and
             (<= i (length lists-data))
             (or
-             (not found-gtd-inbox-list-id)
-             (not found-gtd-priorities-list-id)
-             (not found-gtd-backlog-list-id)))
+             (not found-list-id-inbox)
+             (not found-list-id-priorities)
+             (not found-list-id-backlog)))
       (let* ((list-data (elt lists-data i))
              (list-type (plist-get list-data 'list_type))
              (list-title (plist-get list-data 'title))
              (list-id (plist-get list-data 'id)))
-        (when (equal list-title "gtd-inbox")
-          (setq ewl-gtd-inbox-list-id list-id)
-          (setq found-gtd-inbox-list-id t))
-        (when (equal list-title "gtd-priorities")
-          (setq ewl-gtd-priorities-list-id list-id)
-          (setq found-gtd-priorities-list-id t))
-        (when (equal list-title "gtd-backlog")
-          (setq ewl-gtd-backlog-list-id list-id)
-          (setq found-gtd-backlog-list-id t))
+        (when (equal list-title ewl-list-name-inbox)
+          (setq ewl-list-id-inbox list-id)
+          (setq found-list-id-inbox t))
+        (when (equal list-title ewl-list-name-priorities)
+          (setq ewl-list-id-priorities list-id)
+          (setq found-list-id-priorities t))
+        (when (equal list-title ewl-list-name-backlog)
+          (setq ewl-list-id-backlog list-id)
+          (setq found-list-id-backlog t))
         (setq i (+ 1 i))))))
+
+;; Ideally bind to ,-t but this would be handled by the user's config
+(defun ewl-add-new-task-to-inbox ()
+  "Add new task to inbox, to be sorted later."
+  (ewl-ensure-list-ids)
+  (ewl-create-task
+   (read-from-minibuffer "Enter task: ")
+   ewl-list-id-inbox
+   'ewl-process-response))
+
+;; @TODO: Make this work
+(defun ewl-backlog-task-at-point ()
+  ""
+  )
+
+;; @TODO: Make this work
+(defun ewl-prioritize-task-at-point ()
+  ""
+  )
+
+;; @TODO: Make this work
+(defun ewl-mark-task-at-point-complete ()
+  ""
+  )
+
+(defun ewl-display-inbox-list ()
+  ""
+  )
+
+(defun ewl-display-priorities-list ()
+  ""
+  )
+
+(defun ewl-display-backlog-list ()
+  ""
+  )
+
+;; @TODO What the fuck is going on here?
+;; j/k, we needed the current revision in order to delete
+;; This can/should probably be refactored to simplify
+(defun ewl-delete-task-at-point ()
+  "Get task at point and pass data to delete operation"
+  (let* ((text-string (thing-at-point 'word))
+         (id (get-text-property 1 'id text-string))
+         (type (get-text-property 1 'type text-string)))
+    (if (equal "task" type)
+        (ewl-delete-task id)
+      (message "delete-task requires task"))))
+
+;; @TODO: Delete works but list won't refresh
+(defun ewl-delete-task (task-id)
+  "Delete task identified by TASK-ID"
+  (ewl-url-retrieve
+   (ewl--url-specific-task task-id)
+   (lambda(response)
+     (let* ((task-data (ewl-process-response response))
+            (revision (plist-get task-data 'revision))
+            (delete-url (concat
+                         (ewl--url-specific-task task-id)
+                         "?"
+                         (url-build-query-string `((revision ,revision))))))
+       (ewl-url-retrieve
+        delete-url
+        'ewl-process-response-and-refresh-list
+        "DELETE")))))
 
 (defun ewl-init ()
   "Basic entry point"
   (ewl-ensure-list-ids)
-  (ewl-display-tasks-for-list ewl-gtd-priorities-list-id))
+  (ewl-display-tasks-for-list ewl-list-id-priorities))
 
 (ewl-init)

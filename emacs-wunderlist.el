@@ -64,12 +64,22 @@
   :group 'ewl
   :type 'string)
 
-(defcustom ewl-inbox-id nil
-  "ID for inbox list"
+(defcustom ewl-gtd-inbox-list-id nil
+  "ID for list named gtd-inbox"
   :group 'ewl
   :type 'integer)
 
-(defcustom ewl-task-buffer-name "*ewl-task-buffer*"
+(defcustom ewl-gtd-priorities-list-id nil
+  "ID for list named gtd-priorities"
+  :group 'ewl
+  :type 'integer)
+
+(defcustom ewl-gtd-backlog-list-id nil
+  "ID for list named gtd-backlog"
+  :group 'ewl
+  :type 'integer)
+
+(defcustom ewl-task-buffer-name "*ewl-gtd-buffer*"
   "Name for the emacs wunderlist buffer."
   :group 'ewl
   :type 'string)
@@ -131,7 +141,7 @@
                (json-read))
            (if (fboundp cb) (funcall cb)))))))
 
-(defun ewl-get-tasks-for-list (list-id)
+(defun ewl-display-tasks-for-list (list-id)
   "Display response for all tasks in a particular list"
   (ewl-url-retrieve
    (ewl--url-tasks-for-list list-id)
@@ -212,7 +222,7 @@
   (let* ((text-string (thing-at-point 'word))
          (id (get-text-property 1 'id text-string))
          (type (get-text-property 1 'type text-string)))
-    (if (equal type "list") (ewl-get-tasks-for-list id))
+    (if (equal type "list") (ewl-display-tasks-for-list id))
     (if (equal type "task") (ewl-mark-task-complete id))))
 
 (defun ewl-get-list-id-from-thing-at-point ()
@@ -285,7 +295,7 @@ The following keys are available in `ewl-mode':
   (pop-to-buffer ewl-task-buffer-name)
   (goto-char (point-max))
   (backward-word) ;; Go to the last place we're certain to have a list-id
-  (ewl-get-tasks-for-list (ewl-get-list-id-from-thing-at-point)))
+  (ewl-display-tasks-for-list (ewl-get-list-id-from-thing-at-point)))
 
 (defun ewl-process-response-and-refresh-list (response)
   "Handle response then refresh current list in window"
@@ -331,40 +341,56 @@ The following keys are available in `ewl-mode':
   "Move task to a different list"
   (ewl-update-task task-id nil nil new-list-id))
 
-(defun ewl-init ()
-  "Basic entry point"
-  (ewl-ensure-inbox-id)
-  (ewl-get-lists))
-
 ;; Ideally bind to ,-t but this would be handled by the user's config
 (defun ewl-add-task-to-inbox ()
   "Add new task to inbox, to be sorted later."
-  (ewl-ensure-inbox-id)
+  (ewl-ensure-list-ids)
   (ewl-create-task
    (read-from-minibuffer "Enter task: ")
-   ewl-inbox-id
+   ewl-gtd-inbox-list-id
    'ewl-process-response))
 
-;; Ideally bind to something like ,-p
-(defun ewl-display-priorities ()
-  "Display only starred priorities."
-  )
-
-(defun ewl-ensure-inbox-id ()
+(defun ewl-ensure-list-ids ()
   "Ensure that ewl-inbox-id is populated"
-  (if (not ewl-inbox-id)
-      (ewl-url-retrieve ewl-url-lists 'ewl-get-inbox-id)))
+  (if (or
+       (not ewl-gtd-inbox-list-id)
+       (not ewl-gtd-priorities-list-id)
+       (not ewl-gtd-backlog-list-id))
+      (ewl-url-retrieve ewl-url-lists 'ewl-load-list-ids)))
 
-(defun ewl-get-inbox-id (response)
+;; @TODO: If list IDs are null after this
+;; We need to create them
+(defun ewl-load-list-ids (response)
   "Parse response of lists API to determine inbox ID"
   (let ((lists-data (ewl-process-response response))
-        (found-inbox nil)
+        (found-gtd-inbox-list-id nil)
+        (found-gtd-priorities-list-id nil)
+        (found-gtd-backlog-list-id nil)
         (i 0))
-    (while (and (not found-inbox) (<= i (length lists-data)))
-      (let* ((list-data (elt lists-data i)))
-        (when (equal (plist-get list-data 'list_type) "inbox")
-          (setq ewl-inbox-id (plist-get list-data 'id))
-          (setq found-inbox t))
+    (while (and
+            (<= i (length lists-data))
+            (or
+             (not found-gtd-inbox-list-id)
+             (not found-gtd-priorities-list-id)
+             (not found-gtd-backlog-list-id)))
+      (let* ((list-data (elt lists-data i))
+             (list-type (plist-get list-data 'list_type))
+             (list-title (plist-get list-data 'title))
+             (list-id (plist-get list-data 'id)))
+        (when (equal list-title "gtd-inbox")
+          (setq ewl-gtd-inbox-list-id list-id)
+          (setq found-gtd-inbox-list-id t))
+        (when (equal list-title "gtd-priorities")
+          (setq ewl-gtd-priorities-list-id list-id)
+          (setq found-gtd-priorities-list-id t))
+        (when (equal list-title "gtd-backlog")
+          (setq ewl-gtd-backlog-list-id list-id)
+          (setq found-gtd-backlog-list-id t))
         (setq i (+ 1 i))))))
+
+(defun ewl-init ()
+  "Basic entry point"
+  (ewl-ensure-list-ids)
+  (ewl-display-tasks-for-list ewl-gtd-priorities-list-id))
 
 (ewl-init)

@@ -386,15 +386,15 @@ The following keys are available in `ewl-mode':
 
 (defun ewl-display-inbox-list ()
   ""
-  )
+  (ewl-display-tasks-for-list ewl-list-id-inbox))
 
 (defun ewl-display-priorities-list ()
   ""
-  )
+  (ewl-display-tasks-for-list ewl-list-id-priorities))
 
 (defun ewl-display-backlog-list ()
   ""
-  )
+  (ewl-display-tasks-for-list ewl-list-id-backlog))
 
 ;; @TODO What the fuck is going on here?
 ;; j/k, we needed the current revision in order to delete

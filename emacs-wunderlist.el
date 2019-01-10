@@ -214,18 +214,35 @@
   "Turn this into a function so it can refresh for dev purposes"
   (let ((map (make-sparse-keymap)))
     (define-key map "t"
-      (lambda() (interactive) (ewl-add-new-task-to-inbox)))
+      (lambda() (interactive) (ewl-add-task-to-inbox)))
     (define-key map "c"
-      (lambda() (interactive) (ewl-mark-task-at-point-complete)))
+      (lambda() (interactive) (ewl-update-task-at-point t)))
     (define-key map "d"
       (lambda() (interactive) (ewl-delete-task-at-point)))
     (define-key map "p"
-      (lambda() (interactive) (ewl-prioritize-task-at-point)))
+      (lambda() (interactive) (ewl-update-task-at-point nil ewl-list-id-priorities)))
     (define-key map "b"
-      (lambda() (interactive) (ewl-backlog-task-at-point)))
+      (lambda() (interactive) (ewl-update-task-at-point nil ewl-list-id-backlog)))
     (define-key map "q"
       (lambda() (interactive) (quit-window t (selected-window))))
+    (define-key map "i"
+      (lambda() (interactive) (ewl-display-tasks-for-list ewl-list-id-inbox)))
+    (define-key map "f"
+      (lambda() (interactive) (ewl-display-tasks-for-list ewl-list-id-backlog)))
+    (define-key map "a"
+      (lambda() (interactive) (ewl-display-tasks-for-list ewl-list-id-priorities)))
     map))
+
+;; Evil mode will override this
+;; It's up to the user to handle evil mode in their configs
+(defvar ewl-mode-map (ewl--get-mode-map)
+  "Get the keymap for the ewl window")
+
+(define-derived-mode ewl-mode nil "EWL"
+  "A major mode for the ewl task buffer.
+The following keys are available in `ewl-mode':
+\\{ewl-mode-map}"
+  (setq truncate-lines t))
 
 (defun ewl--get-id-from-thing-at-point ()
   "Get id text property of thing at point."
@@ -243,16 +260,6 @@
         (get-text-property 1 'id text-string)
       (get-text-property 1 'list-id text-string))))
 
-;; Evil mode will override this
-;; It's up to the user to handle evil mode in their configs
-(defvar ewl-mode-map (ewl--get-mode-map)
-  "Get the keymap for the ewl window")
-
-(define-derived-mode ewl-mode nil "EWL"
-  "A major mode for the ewl task buffer.
-The following keys are available in `ewl-mode':
-\\{ewl-mode-map}"
-  (setq truncate-lines t))
 
 (defun ewl-create-task (task-title list-id cb)
   "Create task from given inputs"
@@ -289,7 +296,7 @@ The following keys are available in `ewl-mode':
 ;; @TODO: This is currently written to take advantage of
 ;; lexical binding; I would like it rewritten to pass
 ;; arguments to a callback and not require lexical binding
-(defun ewl-update-task (task-id &optional is-complete new-title new-list-id)
+(defun ewl-update-task (task-id &optional is-complete new-list-id)
   "Update task by HTTP patch-ing data payload"
   (ewl-url-retrieve
    (ewl--url-specific-task task-id)
@@ -300,7 +307,6 @@ The following keys are available in `ewl-mode':
             (data `((revision . ,task-revision))))
 
        (if is-complete (nconc data `((completed . ,t))))
-       (if new-title (nconc data `((title . ,new-title))))
        (if new-list-id (nconc data `((list_id . ,new-list-id))))
 
        (ewl-url-retrieve
@@ -308,19 +314,6 @@ The following keys are available in `ewl-mode':
         'ewl-process-response-and-refresh-list
         "PATCH"
         (json-encode data))))))
-
-;; @TODO I'd like to see this be a toggle instead
-(defun ewl-mark-task-complete (task-id)
-  "Mark a task complete"
-  (ewl-update-task task-id t))
-
-(defun ewl-update-task-text (task-id new-text)
-  "Update text of task"
-  (ewl-update-task task-id nil new-text))
-
-(defun ewl-move-task-to-new-list (task-id new-list-id)
-  "Move task to a different list"
-  (ewl-update-task task-id nil nil new-list-id))
 
 (defun ewl-ensure-list-ids ()
   "Ensure that necessary list IDs are populated"
@@ -361,7 +354,7 @@ The following keys are available in `ewl-mode':
         (setq i (+ 1 i))))))
 
 ;; Ideally bind to ,-t but this would be handled by the user's config
-(defun ewl-add-new-task-to-inbox ()
+(defun ewl-add-task-to-inbox ()
   "Add new task to inbox, to be sorted later."
   (ewl-ensure-list-ids)
   (ewl-create-task
@@ -369,32 +362,14 @@ The following keys are available in `ewl-mode':
    ewl-list-id-inbox
    'ewl-process-response))
 
-;; @TODO: Make this work
-(defun ewl-backlog-task-at-point ()
+(defun ewl-update-task-at-point (&optional is-complete new-list-id)
   ""
-  )
-
-;; @TODO: Make this work
-(defun ewl-prioritize-task-at-point ()
-  ""
-  )
-
-;; @TODO: Make this work
-(defun ewl-mark-task-at-point-complete ()
-  ""
-  )
-
-(defun ewl-display-inbox-list ()
-  ""
-  (ewl-display-tasks-for-list ewl-list-id-inbox))
-
-(defun ewl-display-priorities-list ()
-  ""
-  (ewl-display-tasks-for-list ewl-list-id-priorities))
-
-(defun ewl-display-backlog-list ()
-  ""
-  (ewl-display-tasks-for-list ewl-list-id-backlog))
+  (let* ((text-string (thing-at-point 'word))
+         (task-id (get-text-property 1 'id text-string)))
+    (when is-complete
+      (ewl-update-task task-id t))
+    (when new-list-id
+      (ewl-update-task task-id nil new-list-id))))
 
 ;; @TODO What the fuck is going on here?
 ;; j/k, we needed the current revision in order to delete

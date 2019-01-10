@@ -98,7 +98,7 @@
   :group 'ewl
   :type 'string)
 
-(defun ewl--get-auth-headers ()
+(defun ewl-get-auth-headers ()
   "A nice function to return a list of auth headers."
   `(("X-Access-Token" . ,ewl-access-token)
     ("X-Client-Id" . ,ewl-client-id)
@@ -109,18 +109,18 @@
 (defvar ewl-url-lists (concat ewl-url-base-api "lists"))
 (defvar ewl-url-tasks (concat ewl-url-base-api "tasks"))
 
-(defun ewl--url-specific-task (task-id)
+(defun ewl-url-specific-task (task-id)
   "Return API url for specific task"
   (concat ewl-url-tasks "/" (number-to-string task-id)))
 
-(defun ewl--url-tasks-for-list (list-id)
+(defun ewl-url-tasks-for-list (list-id)
   "Return API url to get tasks for a specific list"
   (concat ewl-url-tasks "?" (url-build-query-string `((list_id ,list-id)))))
 
 (defun ewl-url-retrieve (url cb &optional method data)
   "Wrap url-retrieve for generic use"
   (let ((url-request-method (or method "GET"))
-        (url-request-extra-headers (ewl--get-auth-headers))
+        (url-request-extra-headers (ewl-get-auth-headers))
         (url-request-data data))
     (url-retrieve url cb)))
 
@@ -153,7 +153,7 @@
 (defun ewl-display-tasks-for-list (list-id)
   "Display response for all tasks in a particular list"
   (ewl-url-retrieve
-   (ewl--url-tasks-for-list list-id)
+   (ewl-url-tasks-for-list list-id)
    'ewl-display-response))
 
 (defun ewl-get-folders ()
@@ -167,7 +167,7 @@
 ;; This seems to work
 (defun ewl-get-task (task-id)
   "Get data for particular task"
-  (ewl-url-retrieve (ewl--url-specific-task task-id)))
+  (ewl-url-retrieve (ewl-url-specific-task task-id)))
 
 (defun ewl-prepare-display-buffer ()
   "Create consistent buffer object for displaying data"
@@ -204,7 +204,7 @@
     (setq item-list (cdr item-list)))
   (setq buffer-read-only t))
 
-(defun ewl--get-mode-map ()
+(defun ewl-get-mode-map ()
   "Turn this into a function so it can refresh for dev purposes"
   (let ((map (make-sparse-keymap)))
     (define-key map "t"
@@ -229,7 +229,7 @@
 
 ;; Evil mode will override this
 ;; It's up to the user to handle evil mode in their configs
-(defvar ewl-mode-map (ewl--get-mode-map)
+(defvar ewl-mode-map (ewl-get-mode-map)
   "Get the keymap for the ewl window")
 
 (define-derived-mode ewl-mode nil "EWL"
@@ -237,14 +237,6 @@
 The following keys are available in `ewl-mode':
 \\{ewl-mode-map}"
   (setq truncate-lines t))
-
-(defun ewl--get-id-from-thing-at-point ()
-  "Get id text property of thing at point."
-  (let* ((text-string (thing-at-point 'word))
-         (id (get-text-property 1 'id text-string))
-         (type (get-text-property 1 'type text-string)))
-    (if (equal type "list") (ewl-display-tasks-for-list id))
-    (if (equal type "task") (ewl-mark-task-complete id))))
 
 (defun ewl-get-list-id-from-thing-at-point ()
   "Get list id text property of thing at point."
@@ -254,7 +246,6 @@ The following keys are available in `ewl-mode':
         (get-text-property 1 'id text-string)
       (get-text-property 1 'list-id text-string))))
 
-
 (defun ewl-create-task (task-title list-id cb)
   "Create task from given inputs"
   (ewl-url-retrieve
@@ -262,13 +253,6 @@ The following keys are available in `ewl-mode':
    cb
    "POST"
    (json-encode `((list_id . ,list-id) (title . ,task-title)))))
-
-(defun ewl-create-task-for-list-at-point ()
-  "Create a new task for the current list"
-  (ewl-create-task
-   (read-from-minibuffer "Enter Task: ")
-   (ewl-get-list-id-from-thing-at-point)
-   'ewl-process-response-and-refresh-list))
 
 ;; @NOTE: This works as a callback, but issue is getting
 ;; id of list we want to refresh
@@ -280,7 +264,7 @@ The following keys are available in `ewl-mode':
   (ewl-display-tasks-for-list (ewl-get-list-id-from-thing-at-point)))
 
 (defun ewl-process-response-and-refresh-list (response)
-  "Handle response then refresh current list in window"
+  "Handle RESPONSE then refresh current list in window"
   (ewl-process-response response 'ewl-refresh-current-list))
 
 (defun ewl-get-single-task (task-id)
@@ -293,11 +277,11 @@ The following keys are available in `ewl-mode':
 (defun ewl-update-task (task-id &optional is-complete new-list-id)
   "Update task by HTTP patch-ing data payload"
   (ewl-url-retrieve
-   (ewl--url-specific-task task-id)
+   (ewl-url-specific-task task-id)
    (lambda(response)
      (let* ((task-data (ewl-process-response response))
             (task-revision (plist-get task-data 'revision))
-            (url (ewl--url-specific-task task-id))
+            (url (ewl-url-specific-task task-id))
             (data `((revision . ,task-revision))))
 
        (if is-complete (nconc data `((completed . ,t))))
@@ -320,7 +304,7 @@ The following keys are available in `ewl-mode':
 ;; @TODO: If list IDs are null after this
 ;; We need to create them
 (defun ewl-load-list-ids (response)
-  "Parse response of lists API to determine inbox ID"
+  "Parse RESPONSE of lists API to determine inbox id"
   (let ((lists-data (ewl-process-response response))
         (found-list-id-inbox nil)
         (found-list-id-priorities nil)
@@ -349,7 +333,7 @@ The following keys are available in `ewl-mode':
 
 ;; Ideally bind to ,-t but this would be handled by the user's config
 (defun ewl-add-task-to-inbox ()
-  "Add new task to inbox, to be sorted later."
+  "Add new task to inbox."
   (ewl-ensure-list-ids)
   (ewl-create-task
    (read-from-minibuffer "Enter task: ")
@@ -357,7 +341,7 @@ The following keys are available in `ewl-mode':
    'ewl-process-response))
 
 (defun ewl-update-task-at-point (&optional is-complete new-list-id)
-  ""
+  "Update task with relevant data."
   (let* ((text-string (thing-at-point 'word))
          (task-id (get-text-property 1 'id text-string)))
     (when is-complete
@@ -380,12 +364,12 @@ The following keys are available in `ewl-mode':
 (defun ewl-delete-task (task-id)
   "Delete task identified by TASK-ID"
   (ewl-url-retrieve
-   (ewl--url-specific-task task-id)
+   (ewl-url-specific-task task-id)
    (lambda(response)
      (let* ((task-data (ewl-process-response response))
             (revision (plist-get task-data 'revision))
             (delete-url (concat
-                         (ewl--url-specific-task task-id)
+                         (ewl-url-specific-task task-id)
                          "?"
                          (url-build-query-string `((revision ,revision))))))
        (ewl-url-retrieve

@@ -1,9 +1,8 @@
 ;;; -*- lexical-binding: t -*-
 
-;; @TODO: Persist inbox ID to file
-;; @TODO: Current task
-;; Find best way to persist customization data
-;; (i.e. auth tokens, list ID for inbox/starred list)
+;; @TODO: Get this to autoload when I start emacs
+;; @TODO: Handle auth info properly
+;; @TODO: If you have the buffer open, and Inbox being shown, and you add a task, it doesn't update the buffer
 
 ;; Another thing to do: Can I get the extra data for the task? i.e. note/comment
 ;;
@@ -79,13 +78,8 @@
   :group 'ewl
   :type 'integer)
 
-(defcustom ewl-task-buffer-name "*ewl-gtd-buffer*"
+(defcustom ewl-task-buffer-name "*ewl-buffer*"
   "Name for the emacs wunderlist buffer."
-  :group 'ewl
-  :type 'string)
-
-(defcustom ewl-config-file (concat user-emacs-directory "emacs-wunderlist-config.el")
-  "Location to persist config information for this plugin"
   :group 'ewl
   :type 'string)
 
@@ -371,8 +365,7 @@ The following keys are available in `ewl-mode':
     (when new-list-id
       (ewl-update-task task-id nil new-list-id))))
 
-;; @TODO What the fuck is going on here?
-;; j/k, we needed the current revision in order to delete
+;; we need the current revision in order to delete
 ;; This can/should probably be refactored to simplify
 (defun ewl-delete-task-at-point ()
   "Get task at point and pass data to delete operation"

@@ -211,7 +211,7 @@
       (lambda() (interactive) (ewl-add-task-to-inbox)))
     (define-key map "c"
       (lambda() (interactive) (ewl-update-task-at-point t)))
-    (define-key map "d"
+    (define-key map "r"
       (lambda() (interactive) (ewl-delete-task-at-point)))
     (define-key map "p"
       (lambda() (interactive) (ewl-update-task-at-point nil ewl-list-id-priorities)))
@@ -219,11 +219,11 @@
       (lambda() (interactive) (ewl-update-task-at-point nil ewl-list-id-backlog)))
     (define-key map "q"
       (lambda() (interactive) (quit-window t (selected-window))))
-    (define-key map "i"
+    (define-key map "di"
       (lambda() (interactive) (ewl-display-tasks-for-list ewl-list-id-inbox)))
-    (define-key map "f"
+    (define-key map "db"
       (lambda() (interactive) (ewl-display-tasks-for-list ewl-list-id-backlog)))
-    (define-key map "a"
+    (define-key map "dp"
       (lambda() (interactive) (ewl-display-tasks-for-list ewl-list-id-priorities)))
     map))
 

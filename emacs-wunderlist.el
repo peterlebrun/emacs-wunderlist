@@ -47,7 +47,7 @@
 ;; complete, prioritize, delete
 
 ;; Load auth info during development
-(load-file "./setup.el")
+(load-file (concat (file-name-directory load-file-name) "setup.el"))
 
 (defgroup ewl nil
   "A simple plugin to manage your wunderlist via emacs"
@@ -227,6 +227,10 @@
       (lambda() (interactive) (ewl-display-tasks-for-list ewl-list-id-priorities)))
     map))
 
+(defun ewl-display-priorities ()
+  "Syntactic sugar to display priorities list."
+  (ewl-display-tasks-for-list ewl-list-id-priorities))
+
 ;; Evil mode will override this
 ;; It's up to the user to handle evil mode in their configs
 (defvar ewl-mode-map (ewl-get-mode-map)
@@ -382,4 +386,4 @@ The following keys are available in `ewl-mode':
   (ewl-ensure-list-ids)
   (ewl-display-tasks-for-list ewl-list-id-priorities))
 
-(ewl-init)
+(ewl-ensure-list-ids)

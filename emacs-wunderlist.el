@@ -156,14 +156,6 @@
    (ewl-url-tasks-for-list list-id)
    'ewl-display-response))
 
-(defun ewl-get-folders ()
-  "Retrieve all folders"
-  (ewl-url-retrieve ewl-url-folders 'ewl-display-response))
-
-(defun ewl-get-lists ()
-  "Retrieve all lists"
-  (ewl-url-retrieve ewl-url-lists 'ewl-display-response))
-
 ;; This seems to work
 (defun ewl-get-task (task-id)
   "Get data for particular task"

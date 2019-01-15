@@ -3,6 +3,11 @@
 ;; @TODO: Get this to autoload when I start emacs
 ;; @TODO: Handle auth info properly
 ;; @TODO: If you have the buffer open, and Inbox being shown, and you add a task, it doesn't update the buffer
+;; @TODO: Add note for task
+;; @TODO: Edit note for task
+;; @TODO: View note for task
+;; @TODO: using org-read-date opens calendar buffer on top of screen, move to bottom
+;; @TODO: Edit task title
 
 ;; Another thing to do: Can I get the extra data for the task? i.e. note/comment
 ;;

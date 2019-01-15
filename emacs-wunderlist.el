@@ -209,6 +209,8 @@
       (lambda() (interactive) (ewl-update-task-at-point nil ewl-list-id-priorities)))
     (define-key map "b"
       (lambda() (interactive) (ewl-update-task-at-point nil ewl-list-id-backlog)))
+    (define-key map "s"
+      (lambda() (interactive) (ewl-update-due-date-for-task-at-point)))
     (define-key map "q"
       (lambda() (interactive) (quit-window t (selected-window))))
     (define-key map "di"
@@ -270,7 +272,7 @@ The following keys are available in `ewl-mode':
 ;; @TODO: This is currently written to take advantage of
 ;; lexical binding; I would like it rewritten to pass
 ;; arguments to a callback and not require lexical binding
-(defun ewl-update-task (task-id &optional is-complete new-list-id)
+(defun ewl-update-task (task-id &optional is-complete new-list-id due-date)
   "Update task by HTTP patch-ing data payload"
   (ewl-url-retrieve
    (ewl-url-specific-task task-id)
@@ -282,12 +284,19 @@ The following keys are available in `ewl-mode':
 
        (if is-complete (nconc data `((completed . ,t))))
        (if new-list-id (nconc data `((list_id . ,new-list-id))))
+       (if due-date (nconc data `((due_date . ,due-date))))
 
        (ewl-url-retrieve
         url
         'ewl-process-response-and-refresh-list
         "PATCH"
         (json-encode data))))))
+
+
+(defun ewl-update-due-date-for-task-at-point ()
+  ""
+  (let ((due-date (org-read-date nil nil nil "Select due date:")))
+    (ewl-update-task-at-point nil nil due-date)))
 
 (defun ewl-ensure-list-ids ()
   "Ensure that necessary list IDs are populated"
@@ -336,14 +345,16 @@ The following keys are available in `ewl-mode':
    ewl-list-id-inbox
    'ewl-process-response))
 
-(defun ewl-update-task-at-point (&optional is-complete new-list-id)
+(defun ewl-update-task-at-point (&optional is-complete new-list-id due-date)
   "Update task with relevant data."
   (let* ((text-string (thing-at-point 'word))
          (task-id (get-text-property 1 'id text-string)))
     (when is-complete
       (ewl-update-task task-id t))
     (when new-list-id
-      (ewl-update-task task-id nil new-list-id))))
+      (ewl-update-task task-id nil new-list-id))
+    (when due-date
+      (ewl-update-task task-id nil nil due-date))))
 
 ;; we need the current revision in order to delete
 ;; This can/should probably be refactored to simplify

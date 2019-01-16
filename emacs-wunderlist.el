@@ -218,16 +218,24 @@
     (define-key map "q"
       (lambda() (interactive) (quit-window t (selected-window))))
     (define-key map "di"
-      (lambda() (interactive) (ewl-display-tasks-for-list ewl-list-id-inbox)))
+      (lambda() (interactive) (ewl-display-inbox)))
     (define-key map "db"
-      (lambda() (interactive) (ewl-display-tasks-for-list ewl-list-id-backlog)))
+      (lambda() (interactive) (ewl-display-backlog)))
     (define-key map "dp"
-      (lambda() (interactive) (ewl-display-tasks-for-list ewl-list-id-priorities)))
+      (lambda() (interactive) (ewl-display-priorities)))
     map))
 
 (defun ewl-display-inbox ()
-  "Syntactic sugar to display priorities list."
+  "Syntactic sugar to display inbox list."
   (ewl-display-tasks-for-list ewl-list-id-inbox))
+
+(defun ewl-display-backlog ()
+  "Syntactic sugar to display backlog list."
+  (ewl-display-tasks-for-list ewl-list-id-backlog))
+
+(defun ewl-display-priorities ()
+  "Syntactic sugar to display priorities list."
+  (ewl-display-tasks-for-list ewl-list-id-priorities))
 
 ;; Evil mode will override this
 ;; It's up to the user to handle evil mode in their configs

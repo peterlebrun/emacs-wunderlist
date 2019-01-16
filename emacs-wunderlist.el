@@ -110,7 +110,6 @@
     ("Content-Type" . "application/json")))
 
 (defvar ewl-url-base-api "https://a.wunderlist.com/api/v1/")
-(defvar ewl-url-folders (concat ewl-url-base-api "folders"))
 (defvar ewl-url-lists (concat ewl-url-base-api "lists"))
 (defvar ewl-url-tasks (concat ewl-url-base-api "tasks"))
 

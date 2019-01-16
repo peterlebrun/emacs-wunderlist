@@ -226,9 +226,9 @@
       (lambda() (interactive) (ewl-display-tasks-for-list ewl-list-id-priorities)))
     map))
 
-(defun ewl-display-priorities ()
+(defun ewl-display-inbox ()
   "Syntactic sugar to display priorities list."
-  (ewl-display-tasks-for-list ewl-list-id-priorities))
+  (ewl-display-tasks-for-list ewl-list-id-inbox))
 
 ;; Evil mode will override this
 ;; It's up to the user to handle evil mode in their configs
@@ -388,10 +388,5 @@ The following keys are available in `ewl-mode':
         delete-url
         'ewl-process-response-and-refresh-list
         "DELETE")))))
-
-(defun ewl-init ()
-  "Basic entry point"
-  (ewl-ensure-list-ids)
-  (ewl-display-tasks-for-list ewl-list-id-priorities))
 
 (ewl-ensure-list-ids)

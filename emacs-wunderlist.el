@@ -6,8 +6,8 @@
 ;; @TODO: View note for task
 ;; @TODO: using org-read-date opens calendar buffer on top of screen, move to bottom
 ;; @TODO: Edit task title
+;; @TODO: Get buffers to live-refresh
 
-;; Another thing to do: Can I get the extra data for the task? i.e. note/comment
 ;;
 ;; TODO:
 ;; 1: DONE

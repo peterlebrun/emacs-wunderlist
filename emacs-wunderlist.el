@@ -189,6 +189,8 @@
       (lambda() (interactive) (ewl-update-due-date-for-task-at-point)))
     (define-key map "q"
       (lambda() (interactive) (quit-window t (selected-window))))
+    (define-key map "x"
+      (lambda() (interactive) (ewl-create-note-for-task-at-point)))
     (define-key map "di"
       (lambda() (interactive) (ewl-display-inbox)))
     (define-key map "db"
@@ -374,43 +376,34 @@ The following keys are available in `ewl-mode':
    (list task-id)))
 
 ;; NOTES
-;;(defvar ewl-url-notes (concat ewl-url-base-api "notes"))
-;;(defun ewl-url-notes-for-task (task-id)
-  ;;"Get list of notes associated with a particular task"
-  ;;(concat ewl-url-notes "?"(url-build-query-string `((task_id , task-id)))))
-;;
-;;(defun ewl-get-notes-for-task (task-id)
-  ;;"Get notes associated with a particular task"
-  ;;)
-;;
-;;(defun ewl-get-note (note-id)
-  ;;"Get detail associated with a particular note"
-  ;;)
-;;
-;;(defun ewl-create-note-for-task (task-id content)
-  ;;""
-  ;;)
-;;
-;;(defun ewl-create-task (task-title list-id cb)
-  ;;"Create task from given inputs"
-  ;;(ewl-url-retrieve
-   ;;ewl-url-tasks
-   ;;cb
-   ;;nil
-   ;;"POST"
-   ;;(json-encode `((list_id . ,list-id) (title . ,task-title)))))
-;;
-;;(defun ewl-update-note (note-id content)
-  ;;"Update note by HTTP patch-ing data payload"
-  ;;(ewl-url-retrieve
-   ;;(ewl-url-specific-note note-id)
-   ;;(lambda(status content)
-     ;;(let* ((note-data (ewl-process-response))
-            ;;(note-revision (plist-get note-data 'revision))
-            ;;(data `((revision . ,note-revision)
-            ;;(url
-  ;;)
-;;
+(defvar ewl-url-notes (concat ewl-url-base-api "notes"))
+(defun ewl-url-notes-for-task (task-id)
+  "Get list of notes associated with a particular task"
+  (concat ewl-url-notes "?" (url-build-query-string `((task_id , task-id)))))
+
+(defun ewl-get-notes-for-task (task-id)
+  "Get notes associated with a particular task"
+  )
+
+(defun ewl-get-note (note-id)
+  "Get detail associated with a particular note"
+  )
+
+(defun ewl-create-note-for-task-at-point ()
+  (let* ((text-string (thing-at-point 'word))
+         (task-id (get-text-property 1 'id text-string))
+         (content (read-from-minibuffer "Enter note: ")))
+    (ewl-create-note-for-task task-id content 'ewl-noop-process-response)))
+
+(defun ewl-create-note-for-task (task-id content cb)
+  ""
+  (ewl-url-retrieve
+   ewl-url-notes
+   cb
+   nil
+   "POST"
+   (json-encode `((task_id . ,task-id) (content . ,content)))))
+
 ;;(defun ewl-update-task (task-id &optional is-complete new-list-id due-date new-title)
   ;;"Update task by HTTP patch-ing data payload"
   ;;(ewl-url-retrieve

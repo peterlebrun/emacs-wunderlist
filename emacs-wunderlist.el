@@ -1,5 +1,3 @@
-;;; -*- lexical-binding: t -*-
-
 ;; @TODO: Get this to autoload when I start emacs
 ;; @TODO: Handle auth info properly
 ;; @TODO: If you have the buffer open, and Inbox being shown, and you add a task, it doesn't update the buffer
@@ -121,49 +119,45 @@
   "Return API url to get tasks for a specific list"
   (concat ewl-url-tasks "?" (url-build-query-string `((list_id ,list-id)))))
 
-(defun ewl-url-retrieve (url cb &optional method data)
+(defun ewl-url-retrieve (url cb &optional cbargs method data)
   "Wrap url-retrieve for generic use"
   (let ((url-request-method (or method "GET"))
         (url-request-extra-headers (ewl-get-auth-headers))
         (url-request-data data))
-    (url-retrieve url cb)))
+    (url-retrieve url cb (or cbargs nil))))
 
-(defun ewl-display-response (response)
+(defun ewl-display-response (status buffer-name)
   "Parse and display response in window"
-  (let ((json-data (ewl-process-response response)))
+  (let ((json-data (ewl-process-response)))
     (if json-data
         (with-current-buffer (ewl-prepare-display-buffer)
           (setq buffer-read-only nil)
+          (setq header-line-format buffer-name)
           (ewl-display-items (ewl-prepare-items-for-display json-data))
           (setq buffer-read-only t)
           (pop-to-buffer (current-buffer)))
       (print "Error processing API request"))))
 
-(defun ewl-process-response (response &optional cb)
+(defun ewl-process-response () ;;status &optional cb)
  "Extract the JSON response from the buffer returned by url-http."
  (set-buffer-multibyte t)
  (if (re-search-forward "^HTTP/.+ 20.*$" (line-end-position) t)
      ;; 204 means no content - trying to json-read 204 response will error
-     (if (string-match-p "^HTTP/.+ 204.*$" (thing-at-point 'line t))
-           (if (fboundp cb) (funcall cb))
+     ;;(if (string-match-p "^HTTP/.+ 204.*$" (thing-at-point 'line t))
+           ;;(if (fboundp cb) (funcall cb))
        (when (search-forward "\n\n" nil t)
          (prog1
              (let ((json-object-type 'plist)
                    (json-key-type 'symbol)
                    (json-array-type 'vector))
-               (json-read))
-           (if (fboundp cb) (funcall cb)))))))
+               (json-read))))))
+      ;;     (if (fboundp cb) (funcall cb)))))))
 
-(defun ewl-display-tasks-for-list (list-id)
+(defun ewl-display-tasks-for-list (list-id list-name)
   "Display response for all tasks in a particular list"
   (ewl-url-retrieve
    (ewl-url-tasks-for-list list-id)
-   'ewl-display-response))
-
-;; This seems to work
-(defun ewl-get-task (task-id)
-  "Get data for particular task"
-  (ewl-url-retrieve (ewl-url-specific-task task-id)))
+   'ewl-display-response '(list-name)))
 
 (defun ewl-prepare-display-buffer ()
   "Create consistent buffer object for displaying data"
@@ -227,15 +221,15 @@
 
 (defun ewl-display-inbox ()
   "Syntactic sugar to display inbox list."
-  (ewl-display-tasks-for-list ewl-list-id-inbox))
+  (ewl-display-tasks-for-list ewl-list-id-inbox "INBOX"))
 
 (defun ewl-display-backlog ()
   "Syntactic sugar to display backlog list."
-  (ewl-display-tasks-for-list ewl-list-id-backlog))
+  (ewl-display-tasks-for-list ewl-list-id-backlog "BACKLOG"))
 
 (defun ewl-display-priorities ()
   "Syntactic sugar to display priorities list."
-  (ewl-display-tasks-for-list ewl-list-id-priorities))
+  (ewl-display-tasks-for-list ewl-list-id-priorities "PRIORITIES"))
 
 ;; Evil mode will override this
 ;; It's up to the user to handle evil mode in their configs
@@ -261,6 +255,7 @@ The following keys are available in `ewl-mode':
   (ewl-url-retrieve
    ewl-url-tasks
    cb
+   nil
    "POST"
    (json-encode `((list_id . ,list-id) (title . ,task-title)))))
 
@@ -273,23 +268,12 @@ The following keys are available in `ewl-mode':
   (backward-word) ;; Go to the last place we're certain to have a list-id
   (ewl-display-tasks-for-list (ewl-get-list-id-from-thing-at-point)))
 
-(defun ewl-process-response-and-refresh-list (response)
-  "Handle RESPONSE then refresh current list in window"
-  (ewl-process-response response 'ewl-refresh-current-list))
-
-(defun ewl-get-single-task (task-id)
-  "Return plist of data representing task specified by TASK-ID."
-  (ewl-url-retrieve (ewl-url-specific-task task-id) 'ewl-process-response))
-
-;; @TODO: This is currently written to take advantage of
-;; lexical binding; I would like it rewritten to pass
-;; arguments to a callback and not require lexical binding
 (defun ewl-update-task (task-id &optional is-complete new-list-id due-date)
   "Update task by HTTP patch-ing data payload"
   (ewl-url-retrieve
    (ewl-url-specific-task task-id)
-   (lambda(response)
-     (let* ((task-data (ewl-process-response response))
+   (lambda(status &optional is-complete new-list-id due-date)
+     (let* ((task-data (ewl-process-response))
             (task-revision (plist-get task-data 'revision))
             (url (ewl-url-specific-task task-id))
             (data `((revision . ,task-revision))))
@@ -300,10 +284,13 @@ The following keys are available in `ewl-mode':
 
        (ewl-url-retrieve
         url
-        'ewl-process-response-and-refresh-list
+        'ewl-process-response ;;-and-refresh-list
+        nil
         "PATCH"
-        (json-encode data))))))
-
+        (json-encode data))))
+   '((or is-complete nil)
+     (or new-list-id nil)
+     (or due-date nil))))
 
 (defun ewl-update-due-date-for-task-at-point ()
   ""
@@ -320,9 +307,9 @@ The following keys are available in `ewl-mode':
 
 ;; @TODO: If list IDs are null after this
 ;; We need to create them
-(defun ewl-load-list-ids (response)
+(defun ewl-load-list-ids (status)
   "Parse RESPONSE of lists API to determine inbox id"
-  (let ((lists-data (ewl-process-response response))
+  (let ((lists-data (ewl-process-response))
         (found-list-id-inbox nil)
         (found-list-id-priorities nil)
         (found-list-id-backlog nil)
@@ -355,7 +342,10 @@ The following keys are available in `ewl-mode':
   (ewl-create-task
    (read-from-minibuffer "Enter task: ")
    ewl-list-id-inbox
-   'ewl-process-response))
+   'ewl-process-empty-response))
+
+(defun ewl-process-empty-response (status))
+  ;;(ewl-process-response))
 
 (defun ewl-update-task-at-point (&optional is-complete new-list-id due-date)
   "Update task with relevant data."
@@ -384,8 +374,8 @@ The following keys are available in `ewl-mode':
   "Delete task identified by TASK-ID"
   (ewl-url-retrieve
    (ewl-url-specific-task task-id)
-   (lambda(response)
-     (let* ((task-data (ewl-process-response response))
+   (lambda(status task-id)
+     (let* ((task-data (ewl-process-response))
             (revision (plist-get task-data 'revision))
             (delete-url (concat
                          (ewl-url-specific-task task-id)
@@ -393,7 +383,9 @@ The following keys are available in `ewl-mode':
                          (url-build-query-string `((revision ,revision))))))
        (ewl-url-retrieve
         delete-url
-        'ewl-process-response-and-refresh-list
-        "DELETE")))))
+        'ewl-process-empty-response ;;-and-refresh-list
+        nil
+        "DELETE")))
+   (list task-id)))
 
 (ewl-ensure-list-ids)

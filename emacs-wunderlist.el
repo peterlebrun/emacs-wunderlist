@@ -322,10 +322,10 @@ The following keys are available in `ewl-mode':
    ewl-list-id-inbox
    'ewl-process-empty-response))
 
-(defun ewl-process-empty-response (status))
-  ;;(ewl-process-response))
+(defun ewl-process-empty-response (status)
+  (ewl-process-response))
 
-(defun ewl-update-task-at-point (&optional is-complete new-list-id due-date)
+(defun ewl-update-task-at-point (&optional is-complete new-list-id due-date new-title)
   "Update task with relevant data."
   (let* ((text-string (thing-at-point 'word))
          (task-id (get-text-property 1 'id text-string)))
@@ -334,7 +334,9 @@ The following keys are available in `ewl-mode':
     (when new-list-id
       (ewl-update-task task-id nil new-list-id))
     (when due-date
-      (ewl-update-task task-id nil nil due-date))))
+      (ewl-update-task task-id nil nil due-date))
+    (when new-title
+      (ewl-update-task task-id nil nil nil new-title))))
 
 ;; we need the current revision in order to delete
 ;; This can/should probably be refactored to simplify
@@ -347,7 +349,6 @@ The following keys are available in `ewl-mode':
         (ewl-delete-task id)
       (message "delete-task requires task"))))
 
-;; @TODO: Delete works but list won't refresh
 (defun ewl-delete-task (task-id)
   "Delete task identified by TASK-ID"
   (ewl-url-retrieve

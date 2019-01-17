@@ -1,4 +1,3 @@
-;; @TODO: Get this to autoload when I start emacs
 ;; @TODO: Handle auth info properly
 ;; @TODO: If you have the buffer open, and Inbox being shown, and you add a task, it doesn't update the buffer
 ;; @TODO: Add note for task
@@ -8,46 +7,25 @@
 ;; @TODO: Edit task title
 ;; @TODO: Get buffers to live-refresh
 
-;;
-;; TODO:
-;; 1: DONE
-;; Create major mode DONE ;; set major mode in the buffer I create DONE
-;; Open that DONE
-;; allow "q" to close buffer/window DONE
-;;
-;; 2:
-;; Pivot and format data to display list of tasks DONE
-;;
-;; 3:
-;; Propertize data so that task contains task ID and list ID DONE
-;;
-;; NOTE TO SELF: Both 4 & 5 will require creating
-;; 4:
-;; Read from buffer to create new task for list
-;;
-;; 5a:
-;; Mark task done (API Call) DONE
-;; 5b:
-;; Mark task done (bind to key) DONE
-;;
-;; 6:
-;; Delete task ;; I've got this request forming but HTTP request isn't working :/
-;;
-;; 7:
-;; Move task to new list (Extend method `ewl-mark-task-complete` from 5a for this) DONE
-;;
-;; 8:
-;; Cache responses (when appropriate) to reduce HTTP calls
-;;
-;; 9:
-;; Add README.me to the repo DONE
-;;
-;; 10:
+;; DONE
+;; Create major mode
+;; Set major mode in the buffer I create
+;; allow "q" to close buffer/window
+;; Pivot and format data to display list of tasks
+;; Propertize data so that task contains task ID and list ID
+;; Read from minibuffer to create new task for list
+;; Mark task done (API Call)
+;; Mark task done (bind to key)
+;; Delete task
+;; Move task to new list
+;; Add README.me to the repo
 ;; Alter JSON response parsing to handle other-than-200 requests (started)
-;;
-;; Optimal flow: command opens buffer of lists.  Select a list, and see the
-;; tasks from that list.  Have a variety of keybindings available to move,
-;; complete, prioritize, delete
+;; Rewrite callbacks to take CB args and eliminate lexical binding
+;; Display list name as buffer header when displaying lists
+;; Get this to autoload when I start emacs
+
+;; Probably not going to do this
+;; Cache responses (when appropriate) to reduce HTTP calls
 
 ;; Load auth info during development
 (load-file (concat (file-name-directory load-file-name) "setup.el"))

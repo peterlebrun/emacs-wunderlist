@@ -258,6 +258,7 @@ The following keys are available in `ewl-mode':
             (task-revision (plist-get task-data 'revision))
             (url (ewl-url-specific-task task-id))
             (data `((revision . ,task-revision))))
+       (debug is-complete)
 
        (if is-complete (nconc data `((completed . ,t))))
        (if new-list-id (nconc data `((list_id . ,new-list-id))))
@@ -266,7 +267,7 @@ The following keys are available in `ewl-mode':
 
        (ewl-url-retrieve
         url
-        'ewl-process-response ;;-and-refresh-list
+        'ewl-noop-process-response ;;-and-refresh-list
         nil
         "PATCH"
         (json-encode data))))
@@ -331,9 +332,9 @@ The following keys are available in `ewl-mode':
   (ewl-create-task
    (read-from-minibuffer "Enter task: ")
    ewl-list-id-inbox
-   'ewl-process-empty-response))
+   'ewl-noop-process-response))
 
-(defun ewl-process-empty-response (status)
+(defun ewl-noop-process-response (status)
   (ewl-process-response))
 
 (defun ewl-update-task-at-point (&optional is-complete new-list-id due-date new-title)
@@ -373,7 +374,7 @@ The following keys are available in `ewl-mode':
                          (url-build-query-string `((revision ,revision))))))
        (ewl-url-retrieve
         delete-url
-        'ewl-process-empty-response ;;-and-refresh-list
+        'ewl-noop-process-response ;;-and-refresh-list
         nil
         "DELETE")))
    (list task-id)))

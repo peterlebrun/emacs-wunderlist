@@ -4,28 +4,26 @@
 ;; @TODO: Edit note for task
 ;; @TODO: View note for task
 ;; @TODO: using org-read-date opens calendar buffer on top of screen, move to bottom
-;; @TODO: Edit task title
 ;; @TODO: Get buffers to live-refresh
 
-;; DONE
-;; Create major mode
-;; Set major mode in the buffer I create
-;; allow "q" to close buffer/window
-;; Pivot and format data to display list of tasks
-;; Propertize data so that task contains task ID and list ID
-;; Read from minibuffer to create new task for list
-;; Mark task done (API Call)
-;; Mark task done (bind to key)
-;; Delete task
-;; Move task to new list
-;; Add README.me to the repo
-;; Alter JSON response parsing to handle other-than-200 requests (started)
-;; Rewrite callbacks to take CB args and eliminate lexical binding
-;; Display list name as buffer header when displaying lists
-;; Get this to autoload when I start emacs
+;; @DONE: Create major mode
+;; @DONE: Set major mode in the buffer I create
+;; @DONE: allow "q" to close buffer/window
+;; @DONE: Pivot and format data to display list of tasks
+;; @DONE: Propertize data so that task contains task ID and list ID
+;; @DONE: Read from minibuffer to create new task for list
+;; @DONE: Mark task done (API Call)
+;; @DONE: Mark task done (bind to key)
+;; @DONE: Delete task
+;; @DONE: Move task to new list
+;; @DONE: Add README.me to the repo
+;; @DONE: Alter JSON response parsing to handle other-than-200 requests (started)
+;; @DONE: Rewrite callbacks to take CB args and eliminate lexical binding
+;; @DONE: Display list name as buffer header when displaying lists
+;; @DONE: Get this to autoload when I start emacs
+;; @DONE: Edit task title
 
-;; Probably not going to do this
-;; Cache responses (when appropriate) to reduce HTTP calls
+;; @DISMISS: Cache responses (when appropriate) to reduce HTTP calls
 
 ;; Load auth info during development
 (load-file (concat (file-name-directory load-file-name) "setup.el"))
@@ -248,7 +246,6 @@ The following keys are available in `ewl-mode':
   (backward-word) ;; Go to the last place we're certain to have a list-id
   (ewl-display-tasks-for-list (ewl-get-list-id-from-thing-at-point)))
 
-;; @TODO: something's grumpy
 (defun ewl-update-task (task-id &optional is-complete new-list-id due-date new-title)
   "Update task by HTTP patch-ing data payload"
   (ewl-url-retrieve
@@ -295,7 +292,7 @@ The following keys are available in `ewl-mode':
       (ewl-url-retrieve ewl-url-lists 'ewl-load-list-ids)))
 
 ;; @TODO: If list IDs are null after this
-;; We need to create them
+;; We need to create the lists via API
 (defun ewl-load-list-ids (status)
   "Parse RESPONSE of lists API to determine inbox id"
   (let ((lists-data (ewl-process-response))

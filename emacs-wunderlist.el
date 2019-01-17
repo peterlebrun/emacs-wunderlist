@@ -183,6 +183,8 @@
       (lambda() (interactive) (ewl-delete-task-at-point)))
     (define-key map "p"
       (lambda() (interactive) (ewl-update-task-at-point nil ewl-list-id-priorities)))
+    (define-key map "e"
+      (lambda() (interactive) (ewl-update-title-for-task-at-point)))
     (define-key map "b"
       (lambda() (interactive) (ewl-update-task-at-point nil ewl-list-id-backlog)))
     (define-key map "s"
@@ -246,11 +248,12 @@ The following keys are available in `ewl-mode':
   (backward-word) ;; Go to the last place we're certain to have a list-id
   (ewl-display-tasks-for-list (ewl-get-list-id-from-thing-at-point)))
 
-(defun ewl-update-task (task-id &optional is-complete new-list-id due-date)
+;; @TODO: something's grumpy
+(defun ewl-update-task (task-id &optional is-complete new-list-id due-date new-title)
   "Update task by HTTP patch-ing data payload"
   (ewl-url-retrieve
    (ewl-url-specific-task task-id)
-   (lambda(status &optional is-complete new-list-id due-date)
+   (lambda(status task-id &optional is-complete new-list-id due-date new-title)
      (let* ((task-data (ewl-process-response))
             (task-revision (plist-get task-data 'revision))
             (url (ewl-url-specific-task task-id))
@@ -259,6 +262,7 @@ The following keys are available in `ewl-mode':
        (if is-complete (nconc data `((completed . ,t))))
        (if new-list-id (nconc data `((list_id . ,new-list-id))))
        (if due-date (nconc data `((due_date . ,due-date))))
+       (if new-title (nconc data `((title . ,new-title))))
 
        (ewl-url-retrieve
         url
@@ -266,14 +270,21 @@ The following keys are available in `ewl-mode':
         nil
         "PATCH"
         (json-encode data))))
-   '((or is-complete nil)
-     (or new-list-id nil)
-     (or due-date nil))))
+   `(,task-id
+     (or ,is-complete nil)
+     (or ,new-list-id nil)
+     (or ,due-date nil)
+     (or ,new-title nil))))
 
 (defun ewl-update-due-date-for-task-at-point ()
   ""
   (let ((due-date (org-read-date nil nil nil "Select due date:")))
     (ewl-update-task-at-point nil nil due-date)))
+
+(defun ewl-update-title-for-task-at-point ()
+  ""
+  (let ((new-title (read-from-minibuffer "Enter new title: ")))
+    (ewl-update-task-at-point nil nil nil new-title)))
 
 (defun ewl-ensure-list-ids ()
   "Ensure that necessary list IDs are populated"

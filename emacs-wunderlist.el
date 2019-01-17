@@ -258,7 +258,6 @@ The following keys are available in `ewl-mode':
             (task-revision (plist-get task-data 'revision))
             (url (ewl-url-specific-task task-id))
             (data `((revision . ,task-revision))))
-       (debug is-complete)
 
        (if is-complete (nconc data `((completed . ,t))))
        (if new-list-id (nconc data `((list_id . ,new-list-id))))
@@ -272,10 +271,10 @@ The following keys are available in `ewl-mode':
         "PATCH"
         (json-encode data))))
    `(,task-id
-     (or ,is-complete nil)
-     (or ,new-list-id nil)
-     (or ,due-date nil)
-     (or ,new-title nil))))
+     ,(or is-complete nil)
+     ,(or new-list-id nil)
+     ,(or due-date nil)
+     ,(or new-title nil))))
 
 (defun ewl-update-due-date-for-task-at-point ()
   ""

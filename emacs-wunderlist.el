@@ -1,10 +1,10 @@
-; @TODO: Handle auth info properly
+;; @TODO: Handle auth info properly
 ;; @TODO: If you have the buffer open, and Inbox being shown, and you add a task, it doesn't update the buffer
-;; @TODO: Add note for task
-;; @TODO: Edit note for task
 ;; @TODO: View note for task
 ;; @TODO: using org-read-date opens calendar buffer on top of screen, move to bottom
 ;; @TODO: Get buffers to live-refresh
+;; @TODO: Display if task is scheduled
+;; @TODO: gtd-scheduled list (for scheduled items)
 
 ;; @DONE: Create major mode
 ;; @DONE: Set major mode in the buffer I create
@@ -22,6 +22,8 @@
 ;; @DONE: Display list name as buffer header when displaying lists
 ;; @DONE: Get this to autoload when I start emacs
 ;; @DONE: Edit task title
+;; @DONE: Add note for task
+;; @DONE: Edit note for task
 
 ;; @DISMISS: Cache responses (when appropriate) to reduce HTTP calls
 
@@ -62,7 +64,7 @@
   :group 'ewl
   :type 'string)
 
-(defcustom ewl-note-buffer-name "*ewl-notes*"
+(defcustom ewl-notes-buffer-name "*ewl-notes*"
   "Name for the emacs wunderlist notes buffer."
   :group 'ewl
   :type 'string)
@@ -116,18 +118,17 @@
           (setq header-line-format buffer-name)
           (ewl-display-items (ewl-prepare-items-for-display json-data))
           (setq buffer-read-only t)
-          (pop-to-buffer (current-buffer))
-
-          ;; This will split a window vertically
-          ;; And write text in the right side
-          ;; (i.e. for displaying notes)
-          ;;(split-window-right)
-          ;;(other-window 2)
-          ;;(pop-to-buffer (get-buffer-create "*foo*"))
-          ;;(insert "foo bar baz")
-
-          )
+          (pop-to-buffer (current-buffer)))
       (print "Error processing API request"))))
+
+(defun ewl-display-note () ; status)
+  (split-window-right)
+  (other-window 2) ;; Concern from pedro: Will this always work?
+  (pop-to-buffer (ewl-prepare-notes-buffer))
+  (setq buffer-read-only nil)
+  (setq header-line-format "Notes Bitches")
+  (insert "Foo. Bar. Baz.")
+  (setq buffer-read-only t))
 
 (defun ewl-process-response () ;;status &optional cb)
  "Extract the JSON response from the buffer returned by url-http."
@@ -161,7 +162,7 @@
       (setq buffer-read-only t))
     buf))
 
-(defun ewl-prepare-notes-buffer()
+(defun ewl-prepare-notes-buffer ()
   "Create consistent buffer object for displaying notes"
   (let ((buf (get-buffer-create ewl-notes-buffer-name)))
     (with-current-buffer buf
@@ -214,7 +215,7 @@
     (define-key map "s"
       (lambda() (interactive) (ewl-update-due-date-for-task-at-point)))
     (define-key map "q"
-      (lambda() (interactive) (quit-window t (selected-window))))
+      (lambda() (interactive) (quit-window t)))
     (define-key map "x"
       (lambda() (interactive) (ewl-create-note-for-task-at-point)))
     (define-key map "di"
@@ -223,6 +224,8 @@
       (lambda() (interactive) (ewl-display-backlog)))
     (define-key map "dp"
       (lambda() (interactive) (ewl-display-priorities)))
+    (define-key map "w"
+      (lambda() (interactive) (ewl-display-note)))
     map))
 
 ;; Evil mode will override this
@@ -242,7 +245,10 @@ The following keys are available in `ewl-task-mode':
     (define-key map "e"
       (lambda() (interactive) (ewl-update-title-for-task-at-point)))
     (define-key map "q"
-      (lambda() (interactive) (quit-window t (selected-window))))
+      (lambda() (interactive)
+        (kill-buffer ewl-notes-buffer-name)
+        (delete-window)
+        (other-window 1)))
     map))
 
 ;; Evil mode will override this
@@ -466,26 +472,5 @@ The following keys are available in `ewl-notes-mode':
         "PATCH"
         (json-encode data))))
    `(,note-id ,content))))
-
-  ;;;;(defun ewl-display-note (status)
-    ;;;;"Display note for task"
-    ;;;;(let ((note-data
-;;
-;;
-    ;;;; (split-window-right)
-    ;;;; (pop-to-buffer)
-
-;; Split window in two and display note in right window
-;;(defun ewl-display-note (status buffer-name)
-;;  "Parse and display note in window"
-;;  (let ((json-data (ewl-process-response)))
-;;    (if json-data
-;;        (with-current-buffer (ewl-prepare-display-buffer)
-;;          (setq buffer-read-only nil)
-;;          (setq header-line-format buffer-name)
-;;          (ewl-display-items (ewl-prepare-items-for-display json-data))
-;;          (setq buffer-read-only t)
-;;          (pop-to-buffer (current-buffer)))
-;;      (print "Error processing API request"))))
 
 (ewl-ensure-list-ids)

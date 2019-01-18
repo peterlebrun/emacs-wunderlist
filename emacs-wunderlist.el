@@ -102,8 +102,8 @@
         (url-request-data data))
     (url-retrieve url cb (or cbargs nil))))
 
-(defun ewl-display-response (status buffer-name)
-  "Parse and display response in window"
+(defun ewl-display-list-items (status buffer-name)
+  "Parse and display list in window"
   (let ((json-data (ewl-process-response)))
     (if json-data
         (with-current-buffer (ewl-prepare-display-buffer)
@@ -133,7 +133,7 @@
   "Display response for all tasks in a particular list"
   (ewl-url-retrieve
    (ewl-url-tasks-for-list list-id)
-   'ewl-display-response '(list-name)))
+   'ewl-display-list-items '(list-name)))
 
 (defun ewl-prepare-display-buffer ()
   "Create consistent buffer object for displaying data"

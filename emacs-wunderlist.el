@@ -419,7 +419,7 @@ The following keys are available in `ewl-mode':
         nil
         "PATCH"
         (json-encode data))))
-   `(,note-id ,content)))
+   `(,note-id ,content))))
 
   ;;;;(defun ewl-display-note (status)
     ;;;;"Display note for task"

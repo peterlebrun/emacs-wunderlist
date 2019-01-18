@@ -133,7 +133,7 @@
   "Display response for all tasks in a particular list"
   (ewl-url-retrieve
    (ewl-url-tasks-for-list list-id)
-   'ewl-display-list-items '(list-name)))
+   'ewl-display-list-items `(,list-name)))
 
 (defun ewl-prepare-display-buffer ()
   "Create consistent buffer object for displaying data"

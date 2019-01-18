@@ -57,7 +57,12 @@
   :group 'ewl
   :type 'integer)
 
-(defcustom ewl-task-buffer-name "*ewl-buffer*"
+(defcustom ewl-task-buffer-name "*ewl-tasks*"
+  "Name for the emacs wunderlist buffer."
+  :group 'ewl
+  :type 'string)
+
+(defcustom ewl-note-buffer-name "*ewl-notes*"
   "Name for the emacs wunderlist buffer."
   :group 'ewl
   :type 'string)
@@ -106,12 +111,22 @@
   "Parse and display list in window"
   (let ((json-data (ewl-process-response)))
     (if json-data
-        (with-current-buffer (ewl-prepare-display-buffer)
+        (with-current-buffer (ewl-prepare-list-items-buffer)
           (setq buffer-read-only nil)
           (setq header-line-format buffer-name)
           (ewl-display-items (ewl-prepare-items-for-display json-data))
           (setq buffer-read-only t)
-          (pop-to-buffer (current-buffer)))
+          (pop-to-buffer (current-buffer))
+
+          ;; This will split a window vertically
+          ;; And write text in the right side
+          ;; (i.e. for displaying notes)
+          (split-window-right)
+          (other-window 2)
+          (pop-to-buffer (get-buffer-create "*foo*"))
+          (insert "foo bar baz")
+
+          )
       (print "Error processing API request"))))
 
 (defun ewl-process-response () ;;status &optional cb)
@@ -135,14 +150,25 @@
    (ewl-url-tasks-for-list list-id)
    'ewl-display-list-items `(,list-name)))
 
-(defun ewl-prepare-display-buffer ()
-  "Create consistent buffer object for displaying data"
+(defun ewl-prepare-list-items-buffer ()
+  "Create consistent buffer object for displaying list items"
   (let ((buf (get-buffer-create ewl-task-buffer-name)))
     (with-current-buffer buf
       (setq buffer-read-only nil)
       (erase-buffer)
       (kill-all-local-variables)
-      (ewl-mode)
+      (ewl-task-mode)
+      (setq buffer-read-only t))
+    buf))
+
+(defun ewl-prepare-notes-buffer()
+  "Create consistent buffer object for displaying notes"
+  (let ((buf (get-buffer-create ewl-notes-buffer-name)))
+    (with-current-buffer buf
+      (setq buffer-read-only nil)
+      (erase-buffer)
+      (kill-all-local-variables)
+      (ewl-notes-mode)
       (setq buffer-read-only t))
     buf))
 
@@ -170,7 +196,7 @@
     (setq item-list (cdr item-list)))
   (setq buffer-read-only t))
 
-(defun ewl-get-mode-map ()
+(defun ewl-get-task-mode-map ()
   "Turn this into a function so it can refresh for dev purposes"
   (let ((map (make-sparse-keymap)))
     (define-key map "t"
@@ -199,6 +225,45 @@
       (lambda() (interactive) (ewl-display-priorities)))
     map))
 
+;; Evil mode will override this
+;; It's up to the user to handle evil mode in their configs
+(defvar ewl-task-mode-map (ewl-get-task-mode-map)
+  "Get the keymap for the ewl window")
+
+(define-derived-mode ewl-task-mode nil "EWLT"
+  "A major mode for the ewl task buffer.
+The following keys are available in `ewl-task-mode':
+\\{ewl-task-mode-map}"
+  (setq truncate-lines t))
+
+(defun ewl-get-notes-mode-map ()
+  "Turn this into a function so it can refresh for dev purposes"
+  (let ((map (make-sparse-keymap)))
+    (define-key map "e"
+      (lambda() (interactive) (ewl-update-title-for-task-at-point)))
+    (define-key map "q"
+      (lambda() (interactive) (quit-window t (selected-window))))
+    map))
+
+;; Evil mode will override this
+;; It's up to the user to handle evil mode in their configs
+(defvar ewl-notes-mode-map (ewl-get-notes-mode-map)
+  "Get the keymap for the ewl notes window")
+
+(define-derived-mode ewl-notes-mode nil "EWLN"
+  "A major mode for the ewl notes buffer.
+The following keys are available in `ewl-notes-mode':
+\\{ewl-notes-mode-map}"
+  (setq truncate-lines t))
+
+(defun ewl-get-list-id-from-thing-at-point ()
+  "Get list id text property of thing at point."
+  (let* ((text-string (thing-at-point 'word))
+         (type (get-text-property 1 'type text-string)))
+    (if (equal "list" type)
+        (get-text-property 1 'id text-string)
+      (get-text-property 1 'list-id text-string))))
+
 (defun ewl-display-inbox ()
   "Syntactic sugar to display inbox list."
   (ewl-display-tasks-for-list ewl-list-id-inbox "INBOX"))
@@ -210,25 +275,6 @@
 (defun ewl-display-priorities ()
   "Syntactic sugar to display priorities list."
   (ewl-display-tasks-for-list ewl-list-id-priorities "PRIORITIES"))
-
-;; Evil mode will override this
-;; It's up to the user to handle evil mode in their configs
-(defvar ewl-mode-map (ewl-get-mode-map)
-  "Get the keymap for the ewl window")
-
-(define-derived-mode ewl-mode nil "EWL"
-  "A major mode for the ewl task buffer.
-The following keys are available in `ewl-mode':
-\\{ewl-mode-map}"
-  (setq truncate-lines t))
-
-(defun ewl-get-list-id-from-thing-at-point ()
-  "Get list id text property of thing at point."
-  (let* ((text-string (thing-at-point 'word))
-         (type (get-text-property 1 'type text-string)))
-    (if (equal "list" type)
-        (get-text-property 1 'id text-string)
-      (get-text-property 1 'list-id text-string))))
 
 (defun ewl-create-task (task-title list-id cb)
   "Create task from given inputs"
@@ -428,5 +474,18 @@ The following keys are available in `ewl-mode':
 ;;
     ;;;; (split-window-right)
     ;;;; (pop-to-buffer)
+
+;; Split window in two and display note in right window
+;;(defun ewl-display-note (status buffer-name)
+;;  "Parse and display note in window"
+;;  (let ((json-data (ewl-process-response)))
+;;    (if json-data
+;;        (with-current-buffer (ewl-prepare-display-buffer)
+;;          (setq buffer-read-only nil)
+;;          (setq header-line-format buffer-name)
+;;          (ewl-display-items (ewl-prepare-items-for-display json-data))
+;;          (setq buffer-read-only t)
+;;          (pop-to-buffer (current-buffer)))
+;;      (print "Error processing API request"))))
 
 (ewl-ensure-list-ids)

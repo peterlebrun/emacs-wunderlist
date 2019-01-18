@@ -1,4 +1,4 @@
-;; @TODO: Handle auth info properly
+; @TODO: Handle auth info properly
 ;; @TODO: If you have the buffer open, and Inbox being shown, and you add a task, it doesn't update the buffer
 ;; @TODO: Add note for task
 ;; @TODO: Edit note for task
@@ -58,12 +58,12 @@
   :type 'integer)
 
 (defcustom ewl-task-buffer-name "*ewl-tasks*"
-  "Name for the emacs wunderlist buffer."
+  "Name for the emacs wunderlist task buffer."
   :group 'ewl
   :type 'string)
 
 (defcustom ewl-note-buffer-name "*ewl-notes*"
-  "Name for the emacs wunderlist buffer."
+  "Name for the emacs wunderlist notes buffer."
   :group 'ewl
   :type 'string)
 
@@ -121,10 +121,10 @@
           ;; This will split a window vertically
           ;; And write text in the right side
           ;; (i.e. for displaying notes)
-          (split-window-right)
-          (other-window 2)
-          (pop-to-buffer (get-buffer-create "*foo*"))
-          (insert "foo bar baz")
+          ;;(split-window-right)
+          ;;(other-window 2)
+          ;;(pop-to-buffer (get-buffer-create "*foo*"))
+          ;;(insert "foo bar baz")
 
           )
       (print "Error processing API request"))))
@@ -161,16 +161,16 @@
       (setq buffer-read-only t))
     buf))
 
-(defun ewl-prepare-notes-buffer()
-  "Create consistent buffer object for displaying notes"
-  (let ((buf (get-buffer-create ewl-notes-buffer-name)))
-    (with-current-buffer buf
-      (setq buffer-read-only nil)
-      (erase-buffer)
-      (kill-all-local-variables)
-      (ewl-notes-mode)
-      (setq buffer-read-only t))
-    buf))
+;;(defun ewl-prepare-notes-buffer()
+;;  "Create consistent buffer object for displaying notes"
+;;  (let ((buf (get-buffer-create ewl-notes-buffer-name)))
+;;    (with-current-buffer buf
+;;      (setq buffer-read-only nil)
+;;      (erase-buffer)
+;;      (kill-all-local-variables)
+;;      (ewl-notes-mode)
+;;      (setq buffer-read-only t))
+;;    buf))
 
 (defun ewl-prepare-items-for-display (item-list)
   "Pivot data into display format"
@@ -236,25 +236,25 @@ The following keys are available in `ewl-task-mode':
 \\{ewl-task-mode-map}"
   (setq truncate-lines t))
 
-(defun ewl-get-notes-mode-map ()
-  "Turn this into a function so it can refresh for dev purposes"
-  (let ((map (make-sparse-keymap)))
-    (define-key map "e"
-      (lambda() (interactive) (ewl-update-title-for-task-at-point)))
-    (define-key map "q"
-      (lambda() (interactive) (quit-window t (selected-window))))
-    map))
+;;(defun ewl-get-notes-mode-map ()
+;;  "Turn this into a function so it can refresh for dev purposes"
+;;  (let ((map (make-sparse-keymap)))
+;;    (define-key map "e"
+;;      (lambda() (interactive) (ewl-update-title-for-task-at-point)))
+;;    (define-key map "q"
+;;      (lambda() (interactive) (quit-window t (selected-window))))
+;;    map))
 
 ;; Evil mode will override this
 ;; It's up to the user to handle evil mode in their configs
-(defvar ewl-notes-mode-map (ewl-get-notes-mode-map)
-  "Get the keymap for the ewl notes window")
+;;(defvar ewl-notes-mode-map (ewl-get-notes-mode-map)
+;;  "Get the keymap for the ewl notes window")
 
-(define-derived-mode ewl-notes-mode nil "EWLN"
-  "A major mode for the ewl notes buffer.
-The following keys are available in `ewl-notes-mode':
-\\{ewl-notes-mode-map}"
-  (setq truncate-lines t))
+;;(define-derived-mode ewl-notes-mode nil "EWLN"
+;;  "A major mode for the ewl notes buffer.
+;;The following keys are available in `ewl-notes-mode':
+;;\\{ewl-notes-mode-map}"
+;;  (setq truncate-lines t))
 
 (defun ewl-get-list-id-from-thing-at-point ()
   "Get list id text property of thing at point."

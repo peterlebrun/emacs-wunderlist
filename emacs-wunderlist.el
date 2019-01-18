@@ -381,60 +381,46 @@ The following keys are available in `ewl-mode':
   "Get list of notes associated with a particular task"
   (concat ewl-url-notes "?" (url-build-query-string `((task_id , task-id)))))
 
-(defun ewl-get-notes-for-task (task-id)
+;; Returns a list with no more than 1 item
+(defun ewl-get-note-for-task (task-id)
   "Get notes associated with a particular task"
   )
 
+;; Returns single item
 (defun ewl-get-note (note-id)
   "Get detail associated with a particular note"
   )
 
+;; If a note already exists, we'll get a 422 response
+;; & nothing new will be created
 (defun ewl-create-note-for-task-at-point ()
   (let* ((text-string (thing-at-point 'word))
          (task-id (get-text-property 1 'id text-string))
          (content (read-from-minibuffer "Enter note: ")))
-    (ewl-create-note-for-task task-id content 'ewl-noop-process-response)))
+    (ewl-url-retrieve
+     ewl-url-notes
+     'ewl-noop-process-response
+     nil
+     "POST"
+     (json-encode `((task_id . ,task-id) (content . ,content))))))
 
-(defun ewl-create-note-for-task (task-id content cb)
-  ""
+(defun ewl-update-note (note-id content)
+  "Update note by HTTP patch-ing data payload"
   (ewl-url-retrieve
-   ewl-url-notes
-   cb
-   nil
-   "POST"
-   (json-encode `((task_id . ,task-id) (content . ,content)))))
+   (ewl-url-specific-note note-id)
+   (lambda(status note-id content)
+     (let* ((response (ewl-process-response))
+            (data `((revision . ,(plist-get response 'revision))
+                    (content . ,content)))
 
-;;(defun ewl-update-task (task-id &optional is-complete new-list-id due-date new-title)
-  ;;"Update task by HTTP patch-ing data payload"
-  ;;(ewl-url-retrieve
-   ;;(ewl-url-specific-task task-id)
-   ;;(lambda(status task-id &optional is-complete new-list-id due-date new-title)
-     ;;(let* ((task-data (ewl-process-response))
-            ;;(task-revision (plist-get task-data 'revision))
-            ;;(data `((revision . ,task-revision))))
-       ;;(if is-complete (nconc data `((completed . ,t))))
-       ;;(if new-list-id (nconc data `((list_id . ,new-list-id))))
-       ;;(if due-date (nconc data `((due_date . ,due-date))))
-       ;;(if new-title (nconc data `((title . ,new-title))))
-;;
-       ;;(ewl-url-retrieve
-        ;;(ewl-url-specific-task task-id)
-        ;;'ewl-noop-process-response ;;-and-refresh-list
-        ;;nil
-        ;;"PATCH"
-        ;;(json-encode data))))
-   ;;`(,task-id
-     ;;,(or is-complete nil)
-     ;;,(or new-list-id nil)
-     ;;,(or due-date nil)
-     ;;,(or new-title nil))))
-;;
-;;;;(defun ewl-get-note-for-task (task-id)
-  ;;;;"Get note associated with a particular task"
-  ;;;;(ewl-url-retrieve
-   ;;;;(ewl-url-notes-for-task task-id)
-   ;;;;'ewl-display-note)
-;;;;
+       (ewl-url-retrieve
+        (ewl-url-specific-note note-id)
+        'ewl-noop-process-response ;;-and-refresh-list
+        nil
+        "PATCH"
+        (json-encode data))))
+   `(,note-id ,content)))
+
   ;;;;(defun ewl-display-note (status)
     ;;;;"Display note for task"
     ;;;;(let ((note-data

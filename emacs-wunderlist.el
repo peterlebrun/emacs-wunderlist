@@ -5,6 +5,7 @@
 ;; @TODO: Get buffers to live-refresh
 ;; @TODO: Display if task is scheduled
 ;; @TODO: gtd-scheduled list (for scheduled items)
+;; @TODO: Handle 204s in ewl-process-response
 
 ;; @DONE: Create major mode
 ;; @DONE: Set major mode in the buffer I create
@@ -126,8 +127,8 @@
   (other-window 2) ;; Concern from pedro: Will this always work?
   (pop-to-buffer (ewl-prepare-notes-buffer))
   (setq buffer-read-only nil)
-  (setq header-line-format "Notes Bitches")
-  (insert "Foo. Bar. Baz.")
+  (setq header-line-format "Notes Buffer")
+  (insert "Notes Buffer")
   (setq buffer-read-only t))
 
 (defun ewl-process-response () ;;status &optional cb)

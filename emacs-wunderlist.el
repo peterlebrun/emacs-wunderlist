@@ -1,11 +1,11 @@
 ;; @TODO: Handle auth info properly
 ;; @TODO: If you have the buffer open, and Inbox being shown, and you add a task, it doesn't update the buffer
-;; @TODO: View note for task
 ;; @TODO: using org-read-date opens calendar buffer on top of screen, move to bottom
 ;; @TODO: Get buffers to live-refresh
 ;; @TODO: Display if task is scheduled
 ;; @TODO: gtd-scheduled list (for scheduled items)
 ;; @TODO: Handle 204s in ewl-process-response
+;; @TODO: Gracefully handle case with no note
 
 ;; @DONE: Create major mode
 ;; @DONE: Set major mode in the buffer I create
@@ -25,6 +25,7 @@
 ;; @DONE: Edit task title
 ;; @DONE: Add note for task
 ;; @DONE: Edit note for task
+;; @DONE: View note for task
 
 ;; @DISMISS: Cache responses (when appropriate) to reduce HTTP calls
 
@@ -117,19 +118,34 @@
         (with-current-buffer (ewl-prepare-list-items-buffer)
           (setq buffer-read-only nil)
           (setq header-line-format buffer-name)
-          (ewl-display-items (ewl-prepare-items-for-display json-data))
+          (ewl-display-items (ewl-prepare-data-for-display json-data 'ewl-parse-item))
           (setq buffer-read-only t)
           (pop-to-buffer (current-buffer)))
       (print "Error processing API request"))))
 
-(defun ewl-display-note () ; status)
-  (split-window-right)
-  (other-window 2) ;; Concern from pedro: Will this always work?
-  (pop-to-buffer (ewl-prepare-notes-buffer))
-  (setq buffer-read-only nil)
-  (setq header-line-format "Notes Buffer")
-  (insert "Notes Buffer")
-  (setq buffer-read-only t))
+(defun ewl-display-note (status)
+  "Display note in split window"
+  (let ((json-data (ewl-process-response)))
+    (if json-data
+        (with-current-buffer (ewl-prepare-notes-buffer)
+          (split-window-right)
+          (other-window 2) ;; Concern from pedro: Will this always work?
+          (pop-to-buffer (ewl-prepare-notes-buffer))
+          (let ((note-data (ewl-prepare-data-for-display json-data 'ewl-parse-note)))
+            (when note-data
+              (setq buffer-read-only nil)
+              (setq header-line-format "Notes Buffer")
+              (insert (car note-data))
+              (setq buffer-read-only t))))
+      (print "Error processing note request"))))
+
+(defun ewl-display-note-for-task-at-point ()
+  "Display note for task under cursor"
+  (let* ((text-string (thing-at-point 'word))
+         (task-id (get-text-property 1 'id text-string)))
+    (ewl-url-retrieve
+     (ewl-url-notes-for-task task-id)
+     'ewl-display-note)))
 
 (defun ewl-process-response () ;;status &optional cb)
  "Extract the JSON response from the buffer returned by url-http."
@@ -174,20 +190,26 @@
       (setq buffer-read-only t))
     buf))
 
-(defun ewl-prepare-items-for-display (item-list)
+(defun ewl-prepare-data-for-display (data cb)
   "Pivot data into display format"
-  (mapcar (lambda(item-data)
-            (ewl-parse-item item-data))
-          item-list))
+  (mapcar (lambda(item)
+            (funcall cb item))
+          data))
 
-(defun ewl-parse-item (item-data)
-  "Get relevant data for a specific task."
-  (let ((id (plist-get item-data 'id))
-        (title (plist-get item-data 'title))
-        (type (if (plist-get item-data 'type) (plist-get item-data 'type)
-                (if (plist-get item-data 'list_id) "task")))
-        (list-id (plist-get item-data 'list_id)))
+(defun ewl-parse-item (item)
+  "Get relevant data for a specific list item."
+  (let ((id (plist-get item 'id))
+        (title (plist-get item 'title))
+        (type (if (plist-get item 'type) (plist-get item 'type)
+                (if (plist-get item 'list_id) "task")))
+        (list-id (plist-get item 'list_id)))
     (propertize title 'id id 'type type 'list-id list-id)))
+
+(defun ewl-parse-note (note)
+  "Get relevant data for a specific note."
+  (let ((id (plist-get note 'id))
+        (content (plist-get note 'content)))
+    (propertize content 'id id)))
 
 (defun ewl-display-items (item-list)
   "Format item data for display in buffer"
@@ -226,7 +248,7 @@
     (define-key map "dp"
       (lambda() (interactive) (ewl-display-priorities)))
     (define-key map "w"
-      (lambda() (interactive) (ewl-display-note)))
+      (lambda() (interactive) (ewl-display-note-for-task-at-point)))
     map))
 
 ;; Evil mode will override this

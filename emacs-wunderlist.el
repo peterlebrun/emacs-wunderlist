@@ -6,6 +6,11 @@
 ;; @TODO: Display if task has a note (with a little icon of some sort)
 ;; @TODO: gtd-scheduled list (for scheduled items)
 ;; @TODO: Handle 204s in ewl-process-response
+;; @TODO: Get revision info in text properties
+;; @TODO: Make notes buffer editable & saveable
+;; @TODO: Make tasks editable in place
+;; @TODO: Highlight full line while moving through tasks
+;; @TODO: Provide line breaks for anything that runs off the screen
 
 ;; @DONE: Create major mode
 ;; @DONE: Set major mode in the buffer I create

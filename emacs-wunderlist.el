@@ -117,13 +117,13 @@
         (url-request-data data))
     (url-retrieve url cb (or cbargs nil))))
 
-(defun ewl-display-list-items (status buffer-name)
+(defun ewl-display-list-items (status list-name)
   "Parse and display list in window"
   (let ((json-data (ewl-process-response)))
     (if json-data
-        (with-current-buffer (ewl-prepare-list-items-buffer)
+        (with-current-buffer (ewl-prepare-buffer ewl-task-buffer-name 'ewl-task-mode)
           (setq buffer-read-only nil)
-          (setq header-line-format buffer-name)
+          (setq header-line-format list-name)
           (ewl-display-items (ewl-prepare-data-for-display json-data 'ewl-parse-item))
           (setq buffer-read-only t)
           (pop-to-buffer (current-buffer)))
@@ -135,10 +135,11 @@
     (if json-data
         (let ((note-data (ewl-prepare-data-for-display json-data 'ewl-parse-note)))
           (if note-data
-            (with-current-buffer (ewl-prepare-notes-buffer)
+            (with-current-buffer (ewl-prepare-buffer ewl-notes-buffer-name 'ewl-notes-mode)
               (split-window-right)
               (other-window 2) ;; Concern from pedro: Will this always work?
-              (pop-to-buffer (ewl-prepare-notes-buffer))
+              ;; @TODO: Why do I need this line here?
+              (pop-to-buffer ewl-notes-buffer-name)
               (setq buffer-read-only nil)
               (setq header-line-format "Notes Buffer")
               (insert (car note-data))
@@ -175,25 +176,14 @@
    (ewl-url-tasks-for-list list-id)
    'ewl-display-list-items `(,list-name)))
 
-(defun ewl-prepare-list-items-buffer ()
+(defun ewl-prepare-buffer (buffer-name mode-cb)
   "Create consistent buffer object for displaying list items"
-  (let ((buf (get-buffer-create ewl-task-buffer-name)))
+  (let ((buf (get-buffer-create buffer-name)))
     (with-current-buffer buf
       (setq buffer-read-only nil)
       (erase-buffer)
       (kill-all-local-variables)
-      (ewl-task-mode)
-      (setq buffer-read-only t))
-    buf))
-
-(defun ewl-prepare-notes-buffer ()
-  "Create consistent buffer object for displaying notes"
-  (let ((buf (get-buffer-create ewl-notes-buffer-name)))
-    (with-current-buffer buf
-      (setq buffer-read-only nil)
-      (erase-buffer)
-      (kill-all-local-variables)
-      (ewl-notes-mode)
+      (funcall mode-cb)
       (setq buffer-read-only t))
     buf))
 

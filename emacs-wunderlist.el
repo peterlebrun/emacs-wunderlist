@@ -2,10 +2,10 @@
 ;; @TODO: If you have the buffer open, and Inbox being shown, and you add a task, it doesn't update the buffer
 ;; @TODO: using org-read-date opens calendar buffer on top of screen, move to bottom
 ;; @TODO: Get buffers to live-refresh
-;; @TODO: Display if task is scheduled
+;; @TODO: Display if task is scheduled (with a little icon of some sort)
+;; @TODO: Display if task has a note (with a little icon of some sort)
 ;; @TODO: gtd-scheduled list (for scheduled items)
 ;; @TODO: Handle 204s in ewl-process-response
-;; @TODO: Gracefully handle case with no note
 
 ;; @DONE: Create major mode
 ;; @DONE: Set major mode in the buffer I create
@@ -26,6 +26,7 @@
 ;; @DONE: Add note for task
 ;; @DONE: Edit note for task
 ;; @DONE: View note for task
+;; @DONE: Gracefully handle case with no note
 
 ;; @DISMISS: Cache responses (when appropriate) to reduce HTTP calls
 
@@ -121,23 +122,24 @@
           (ewl-display-items (ewl-prepare-data-for-display json-data 'ewl-parse-item))
           (setq buffer-read-only t)
           (pop-to-buffer (current-buffer)))
-      (print "Error processing API request"))))
+      (message "Error processing API request"))))
 
 (defun ewl-display-note (status)
   "Display note in split window"
   (let ((json-data (ewl-process-response)))
     (if json-data
-        (with-current-buffer (ewl-prepare-notes-buffer)
-          (split-window-right)
-          (other-window 2) ;; Concern from pedro: Will this always work?
-          (pop-to-buffer (ewl-prepare-notes-buffer))
-          (let ((note-data (ewl-prepare-data-for-display json-data 'ewl-parse-note)))
-            (when note-data
+        (let ((note-data (ewl-prepare-data-for-display json-data 'ewl-parse-note)))
+          (if note-data
+            (with-current-buffer (ewl-prepare-notes-buffer)
+              (split-window-right)
+              (other-window 2) ;; Concern from pedro: Will this always work?
+              (pop-to-buffer (ewl-prepare-notes-buffer))
               (setq buffer-read-only nil)
               (setq header-line-format "Notes Buffer")
               (insert (car note-data))
-              (setq buffer-read-only t))))
-      (print "Error processing note request"))))
+              (setq buffer-read-only t))
+            (message "No note for this task.")))
+      (message "Error processing note request"))))
 
 (defun ewl-display-note-for-task-at-point ()
   "Display note for task under cursor"

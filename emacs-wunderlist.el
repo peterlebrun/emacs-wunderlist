@@ -2,7 +2,6 @@
 ;; @TODO: If you have the buffer open, and Inbox being shown, and you add a task, it doesn't update the buffer
 ;; @TODO: using org-read-date opens calendar buffer on top of screen, move to bottom
 ;; @TODO: Get buffers to live-refresh
-;; @TODO: Display if task is scheduled (with a little icon of some sort)
 ;; @TODO: Display if task has a note (with a little icon of some sort)
 ;; @TODO: gtd-scheduled list (for scheduled items)
 ;; @TODO: Handle 204s in ewl-process-response
@@ -33,6 +32,7 @@
 ;; @DONE: Edit note for task
 ;; @DONE: View note for task
 ;; @DONE: Gracefully handle case with no note
+;; @DONE: Display if task is scheduled (with a little icon of some sort)
 
 ;; @DISMISS: Cache responses (when appropriate) to reduce HTTP calls
 
@@ -198,10 +198,11 @@
   "Get relevant data for a specific list item."
   (let ((id (plist-get item 'id))
         (title (plist-get item 'title))
+        (due-date (plist-get item 'due_date))
         (type (if (plist-get item 'type) (plist-get item 'type)
                 (if (plist-get item 'list_id) "task")))
         (list-id (plist-get item 'list_id)))
-    (propertize title 'id id 'type type 'list-id list-id)))
+    (propertize title 'id id 'type type 'list-id list-id 'due-date due-date)))
 
 (defun ewl-parse-note (note)
   "Get relevant data for a specific note."
@@ -213,8 +214,9 @@
   "Format item data for display in buffer"
   (setq buffer-read-only nil)
   (while item-list
-    (let* ((title (car item-list)))
-      (insert (concat title "\n")))
+    (let* ((item (car item-list))
+           (due-date (get-text-property 1 'due-date item)))
+      (insert (concat (if due-date "S " "  ") item "\n")))
     (setq item-list (cdr item-list)))
   (setq buffer-read-only t))
 

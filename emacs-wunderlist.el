@@ -11,6 +11,7 @@
 ;; @TODO: Make tasks editable in place
 ;; @TODO: Highlight full line while moving through tasks
 ;; @TODO: Provide line breaks for anything that runs off the screen
+;; @TODO: Add postman tests to repo
 
 ;; @DONE: Create major mode
 ;; @DONE: Set major mode in the buffer I create
@@ -263,12 +264,14 @@ The following keys are available in `ewl-task-mode':
   "Turn this into a function so it can refresh for dev purposes"
   (let ((map (make-sparse-keymap)))
     (define-key map "e"
-      (lambda() (interactive) (ewl-update-title-for-task-at-point)))
+      (lambda() (interactive) (ewl-edit-note)))
     (define-key map "q"
       (lambda() (interactive)
         (kill-buffer ewl-notes-buffer-name)
         (delete-window)
         (other-window 1)))
+    (define-key map (kbd "<C-return>")
+      (lambda() (interactive) (ewl-save-note)))
     map))
 
 ;; Evil mode will override this
@@ -281,6 +284,18 @@ The following keys are available in `ewl-task-mode':
 The following keys are available in `ewl-notes-mode':
 \\{ewl-notes-mode-map}"
   (setq truncate-lines t))
+
+;; @TODO: Leaving insert mode is causing difficulties
+;; Where key map is being overwritten (but surreptitiously)
+(defun ewl-edit-note ()
+  ""
+  (setq buffer-read-only nil)
+  (evil-insert 1))
+
+(defun ewl-save-note ()
+  ""
+  (message "FOO")
+  (setq buffer-read-only t))
 
 (defun ewl-get-list-id-from-thing-at-point ()
   "Get list id text property of thing at point."

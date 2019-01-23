@@ -5,7 +5,6 @@
 ;; @TODO: Display if task has a note (with a little icon of some sort)
 ;; @TODO: gtd-scheduled list (for scheduled items)
 ;; @TODO: Handle 204s in ewl-process-response
-;; @TODO: Get revision info in text properties
 ;; @TODO: Make notes buffer editable & saveable
 ;; @TODO: Make tasks editable in place
 ;; @TODO: Highlight full line while moving through tasks
@@ -33,6 +32,7 @@
 ;; @DONE: View note for task
 ;; @DONE: Gracefully handle case with no note
 ;; @DONE: Display if task is scheduled (with a little icon of some sort)
+;; @DONE: Get revision info in text properties
 
 ;; @DISMISS: Cache responses (when appropriate) to reduce HTTP calls
 
@@ -198,11 +198,12 @@
   "Get relevant data for a specific list item."
   (let* ((id (plist-get item 'id))
          (due-date (plist-get item 'due_date))
+         (revision (plist-get item 'revision))
          (type (if (plist-get item 'type) (plist-get item 'type)
                  (if (plist-get item 'list_id) "task")))
          (list-id (plist-get item 'list_id))
-         (title (concat (if due-date "S " "  ") (plist-get item 'title))))
-    (propertize title 'id id 'type type 'list-id list-id 'due-date due-date)))
+         (title (concat (if due-date "S " "  ") (plist-get item 'title) "\n")))
+    (propertize title 'id id 'type type 'list-id list-id 'due-date due-date 'revision revision)))
 
 (defun ewl-parse-note (note)
   "Get relevant data for a specific note."
@@ -214,7 +215,7 @@
   "Format item data for display in buffer"
   (setq buffer-read-only nil)
   (while item-list
-    (insert (concat (car item-list) "\n"))
+    (insert (car item-list))
     (setq item-list (cdr item-list)))
   (setq buffer-read-only t))
 
@@ -424,7 +425,7 @@ The following keys are available in `ewl-notes-mode':
   "Update task with relevant data."
   (let* ((text-string (thing-at-point 'word))
          (task-id (get-text-property 1 'id text-string)))
-    ;(debug task-id)
+    (debug task-id)
     (when is-complete
       (ewl-update-task task-id t))
     (when new-list-id

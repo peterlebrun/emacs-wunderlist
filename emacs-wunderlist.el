@@ -196,12 +196,12 @@
 
 (defun ewl-parse-item (item)
   "Get relevant data for a specific list item."
-  (let ((id (plist-get item 'id))
-        (title (plist-get item 'title))
-        (due-date (plist-get item 'due_date))
-        (type (if (plist-get item 'type) (plist-get item 'type)
-                (if (plist-get item 'list_id) "task")))
-        (list-id (plist-get item 'list_id)))
+  (let* ((id (plist-get item 'id))
+         (due-date (plist-get item 'due_date))
+         (type (if (plist-get item 'type) (plist-get item 'type)
+                 (if (plist-get item 'list_id) "task")))
+         (list-id (plist-get item 'list_id))
+         (title (concat (if due-date "S " "  ") (plist-get item 'title))))
     (propertize title 'id id 'type type 'list-id list-id 'due-date due-date)))
 
 (defun ewl-parse-note (note)
@@ -214,9 +214,7 @@
   "Format item data for display in buffer"
   (setq buffer-read-only nil)
   (while item-list
-    (let* ((item (car item-list))
-           (due-date (get-text-property 1 'due-date item)))
-      (insert (concat (if due-date "S " "  ") item "\n")))
+    (insert (concat (car item-list) "\n"))
     (setq item-list (cdr item-list)))
   (setq buffer-read-only t))
 
@@ -426,6 +424,7 @@ The following keys are available in `ewl-notes-mode':
   "Update task with relevant data."
   (let* ((text-string (thing-at-point 'word))
          (task-id (get-text-property 1 'id text-string)))
+    ;(debug task-id)
     (when is-complete
       (ewl-update-task task-id t))
     (when new-list-id

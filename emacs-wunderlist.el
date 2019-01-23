@@ -1,7 +1,7 @@
 ;; @TODO: Handle auth info properly
 ;; @TODO: If you have the buffer open, and Inbox being shown, and you add a task, it doesn't update the buffer
-;; @TODO: using org-read-date opens calendar buffer on top of screen, move to bottom
 ;; @TODO: Get buffers to live-refresh
+;; @TODO: using org-read-date opens calendar buffer on top of screen, move to bottom
 ;; @TODO: Display if task has a note (with a little icon of some sort)
 ;; @TODO: gtd-scheduled list (for scheduled items)
 ;; @TODO: Handle 204s in ewl-process-response
@@ -202,7 +202,8 @@
          (type (if (plist-get item 'type) (plist-get item 'type)
                  (if (plist-get item 'list_id) "task")))
          (list-id (plist-get item 'list_id))
-         (title (concat (if due-date "S " "  ") (plist-get item 'title) "\n")))
+         ;; @TODO: Why is this giving me the properties of the first entry?
+         (title (concat (if due-date "S " "  ") (plist-get item 'title))))
     (propertize title 'id id 'type type 'list-id list-id 'due-date due-date 'revision revision)))
 
 (defun ewl-parse-note (note)
@@ -216,6 +217,7 @@
   (setq buffer-read-only nil)
   (while item-list
     (insert (car item-list))
+    (insert "\n")
     (setq item-list (cdr item-list)))
   (setq buffer-read-only t))
 

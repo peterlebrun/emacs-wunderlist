@@ -5,7 +5,7 @@
 ;; @TODO: Display if task has a note (with a little icon of some sort)
 ;; @TODO: gtd-scheduled list (for scheduled items)
 ;; @TODO: Handle 204s in ewl-process-response
-;; @TODO: Make notes buffer editable & saveable
+;; @TODO: Save edits in notes buffer
 ;; @TODO: Make tasks editable in place
 ;; @TODO: Highlight full line while moving through tasks
 ;; @TODO: Provide line breaks for anything that runs off the screen
@@ -33,6 +33,7 @@
 ;; @DONE: Gracefully handle case with no note
 ;; @DONE: Display if task is scheduled (with a little icon of some sort)
 ;; @DONE: Get revision info in text properties
+;; @DONE: Make notes buffer editable
 
 ;; @DISMISS: Cache responses (when appropriate) to reduce HTTP calls
 
@@ -202,8 +203,8 @@
          (type (if (plist-get item 'type) (plist-get item 'type)
                  (if (plist-get item 'list_id) "task")))
          (list-id (plist-get item 'list_id))
-         ;; @TODO: Why is this giving me the properties of the first entry?
-         (title (concat (if due-date "s" " ") "|" (plist-get item 'title))))
+         (note nil) ;; @TODO: get note associated with this task
+         (title (concat (if due-date "s" " ") (if note "n" " ") " " (plist-get item 'title))))
     (propertize title 'id id 'type type 'list-id list-id 'due-date due-date 'revision revision)))
 
 (defun ewl-parse-note (note)
@@ -268,15 +269,14 @@ The following keys are available in `ewl-task-mode':
 (defun ewl-get-notes-mode-map ()
   "Turn this into a function so it can refresh for dev purposes"
   (let ((map (make-sparse-keymap)))
-    (define-key map "e"
+    (define-key map "i" ;; like "insert" mode
       (lambda() (interactive) (ewl-edit-note)))
     (define-key map "q"
-      (lambda() (interactive)
-        (kill-buffer ewl-notes-buffer-name)
-        (delete-window)
-        (other-window 1)))
+      (lambda() (interactive) (ewl-quit-note-buffer)))
     (define-key map (kbd "<C-return>")
       (lambda() (interactive) (ewl-save-note)))
+    (define-key map (kbd "<C-escape>")
+      (lambda() (interactive) (ewl-stop-edit-note)))
     map))
 
 ;; Evil mode will override this
@@ -290,8 +290,6 @@ The following keys are available in `ewl-notes-mode':
 \\{ewl-notes-mode-map}"
   (setq truncate-lines t))
 
-;; @TODO: Leaving insert mode is causing difficulties
-;; Where key map is being overwritten (but surreptitiously)
 (defun ewl-edit-note ()
   ""
   (setq buffer-read-only nil)
@@ -301,6 +299,21 @@ The following keys are available in `ewl-notes-mode':
   ""
   (message "FOO")
   (setq buffer-read-only t))
+
+(defun ewl-stop-edit-note ()
+  ""
+  (let ((current-header header-line-format))
+    (setq buffer-read-only t)
+    (evil-normal-state) ;; Disabling insert state overrides ewl-notes-mode...
+    (ewl-notes-mode) ;; .. but turning ewl-notes-mode back on removes header
+    (setq header-line-format current-header))) ;; so we re-set the header
+
+(defun ewl-quit-note-buffer ()
+  ""
+  (interactive)
+  (kill-buffer ewl-notes-buffer-name)
+  (delete-window)
+  (other-window 1))
 
 (defun ewl-get-list-id-from-thing-at-point ()
   "Get list id text property of thing at point."

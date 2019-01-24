@@ -150,7 +150,7 @@
 
 (defun ewl-display-note-for-task-at-point ()
   "Display note for task under cursor"
-  (let* ((text-string (thing-at-point 'word))
+  (let* ((text-string (thing-at-point 'line))
          (task-id (get-text-property 1 'id text-string)))
     (ewl-url-retrieve
      (ewl-url-notes-for-task task-id)
@@ -203,7 +203,7 @@
                  (if (plist-get item 'list_id) "task")))
          (list-id (plist-get item 'list_id))
          ;; @TODO: Why is this giving me the properties of the first entry?
-         (title (concat (if due-date "S " "  ") (plist-get item 'title))))
+         (title (concat (if due-date "s" " ") "|" (plist-get item 'title))))
     (propertize title 'id id 'type type 'list-id list-id 'due-date due-date 'revision revision)))
 
 (defun ewl-parse-note (note)
@@ -242,6 +242,8 @@
       (lambda() (interactive) (quit-window t)))
     (define-key map "x"
       (lambda() (interactive) (ewl-create-note-for-task-at-point)))
+    (define-key map "i"
+      (lambda() (interactive) (debug (text-properties-at 0 (thing-at-point 'line)))))
     (define-key map "di"
       (lambda() (interactive) (ewl-display-inbox)))
     (define-key map "db"
@@ -302,7 +304,7 @@ The following keys are available in `ewl-notes-mode':
 
 (defun ewl-get-list-id-from-thing-at-point ()
   "Get list id text property of thing at point."
-  (let* ((text-string (thing-at-point 'word))
+  (let* ((text-string (thing-at-point 'line))
          (type (get-text-property 1 'type text-string)))
     (if (equal "list" type)
         (get-text-property 1 'id text-string)
@@ -425,9 +427,8 @@ The following keys are available in `ewl-notes-mode':
 
 (defun ewl-update-task-at-point (&optional is-complete new-list-id due-date new-title)
   "Update task with relevant data."
-  (let* ((text-string (thing-at-point 'word))
+  (let* ((text-string (thing-at-point 'line))
          (task-id (get-text-property 1 'id text-string)))
-    (debug task-id)
     (when is-complete
       (ewl-update-task task-id t))
     (when new-list-id
@@ -441,7 +442,7 @@ The following keys are available in `ewl-notes-mode':
 ;; This can/should probably be refactored to simplify
 (defun ewl-delete-task-at-point ()
   "Get task at point and pass data to delete operation"
-  (let* ((text-string (thing-at-point 'word))
+  (let* ((text-string (thing-at-point 'line))
          (id (get-text-property 1 'id text-string))
          (type (get-text-property 1 'type text-string)))
     (if (equal "task" type)
@@ -472,6 +473,10 @@ The following keys are available in `ewl-notes-mode':
   "Get list of notes associated with a particular task"
   (concat ewl-url-notes "?" (url-build-query-string `((task_id , task-id)))))
 
+(defun ewl-url-notes-for-list (list-id)
+  "Return API url to get tasks for a specific list"
+  (concat ewl-url-notes "?" (url-build-query-string `((list_id ,list-id)))))
+
 ;; Returns a list with no more than 1 item
 (defun ewl-get-note-for-task (task-id)
   "Get notes associated with a particular task"
@@ -485,7 +490,7 @@ The following keys are available in `ewl-notes-mode':
 ;; If a note already exists, we'll get a 422 response
 ;; & nothing new will be created
 (defun ewl-create-note-for-task-at-point ()
-  (let* ((text-string (thing-at-point 'word))
+  (let* ((text-string (thing-at-point 'line))
          (task-id (get-text-property 1 'id text-string))
          (content (read-from-minibuffer "Enter note: ")))
     (ewl-url-retrieve

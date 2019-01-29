@@ -3,7 +3,6 @@
 ;; @TODO: Display if task has a note (with a little icon of some sort)
 ;; @TODO: gtd-scheduled list (for scheduled items)
 ;; @TODO: Handle 204s in ewl-process-response
-;; @TODO: Save edits in notes buffer
 ;; @TODO: Make tasks editable in place
 ;; @TODO: Highlight full line while moving through tasks
 ;; @TODO: Provide line breaks for anything that runs off the screen
@@ -34,6 +33,7 @@
 ;; @DONE: Make notes buffer editable
 ;; @DONE: Get buffers to live-refresh
 ;; @DONE: If you have the buffer open, and Inbox being shown, and you add a task, it doesn't update the buffer
+;; @DONE: Save edits in notes buffer
 
 ;; @DISMISS: Cache responses (when appropriate) to reduce HTTP calls
 
@@ -297,7 +297,10 @@ The following keys are available in `ewl-notes-mode':
 
 (defun ewl-save-note ()
   ""
-  (message "FOO")
+  (let* ((note (sentence-at-point))
+        (id (get-text-property 1 'id note))
+        (content (buffer-substring-no-properties (point-min) (point-max))))
+    (ewl-update-note id content))
   (setq buffer-read-only t))
 
 (defun ewl-stop-edit-note ()
@@ -489,22 +492,16 @@ The following keys are available in `ewl-notes-mode':
 ;; NOTES
 (defvar ewl-url-notes (concat ewl-url-base-api "notes"))
 (defun ewl-url-notes-for-task (task-id)
-  "Get list of notes associated with a particular task"
+  "Get list of notes associated with a particular task."
   (concat ewl-url-notes "?" (url-build-query-string `((task_id , task-id)))))
 
 (defun ewl-url-notes-for-list (list-id)
-  "Return API url to get tasks for a specific list"
+  "Return API url to get notes for a specific list."
   (concat ewl-url-notes "?" (url-build-query-string `((list_id ,list-id)))))
 
-;; Returns a list with no more than 1 item
-(defun ewl-get-note-for-task (task-id)
-  "Get notes associated with a particular task"
-  )
-
-;; Returns single item
-(defun ewl-get-note (note-id)
-  "Get detail associated with a particular note"
-  )
+(defun ewl-url-specific-note (note-id)
+  "Return API url to get specific note."
+  (concat ewl-url-notes "/" (number-to-string note-id)))
 
 ;; If a note already exists, we'll get a 422 response
 ;; & nothing new will be created
@@ -526,14 +523,13 @@ The following keys are available in `ewl-notes-mode':
    (lambda(status note-id content)
      (let* ((response (ewl-process-response))
             (data `((revision . ,(plist-get response 'revision))
-                    (content . ,content)))
-
+                    (content . ,content))))
        (ewl-url-retrieve
         (ewl-url-specific-note note-id)
         'ewl-noop-process-response ;;-and-refresh-list
         nil
         "PATCH"
         (json-encode data))))
-   `(,note-id ,content))))
+   `(,note-id ,content)))
 
 (ewl-ensure-list-ids)

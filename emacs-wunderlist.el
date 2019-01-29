@@ -1,6 +1,4 @@
 ;; @TODO: Handle auth info properly
-;; @TODO: If you have the buffer open, and Inbox being shown, and you add a task, it doesn't update the buffer
-;; @TODO: Get buffers to live-refresh
 ;; @TODO: using org-read-date opens calendar buffer on top of screen, move to bottom
 ;; @TODO: Display if task has a note (with a little icon of some sort)
 ;; @TODO: gtd-scheduled list (for scheduled items)
@@ -34,6 +32,8 @@
 ;; @DONE: Display if task is scheduled (with a little icon of some sort)
 ;; @DONE: Get revision info in text properties
 ;; @DONE: Make notes buffer editable
+;; @DONE: Get buffers to live-refresh
+;; @DONE: If you have the buffer open, and Inbox being shown, and you add a task, it doesn't update the buffer
 
 ;; @DISMISS: Cache responses (when appropriate) to reduce HTTP calls
 
@@ -351,7 +351,8 @@ The following keys are available in `ewl-notes-mode':
   (pop-to-buffer ewl-task-buffer-name)
   (goto-char (point-max))
   (backward-word) ;; Go to the last place we're certain to have a list-id
-  (ewl-display-tasks-for-list (ewl-get-list-id-from-thing-at-point)))
+  (let ((current-header header-line-format))
+    (ewl-display-tasks-for-list (ewl-get-list-id-from-thing-at-point) current-header)))
 
 (defun ewl-update-task (task-id &optional is-complete new-list-id due-date new-title)
   "Update task by HTTP patch-ing data payload"
@@ -368,7 +369,7 @@ The following keys are available in `ewl-notes-mode':
 
        (ewl-url-retrieve
         (ewl-url-specific-task task-id)
-        'ewl-noop-process-response ;;-and-refresh-list
+        'ewl-process-response-and-refresh-list
         nil
         "PATCH"
         (json-encode data))))
@@ -433,10 +434,15 @@ The following keys are available in `ewl-notes-mode':
   (ewl-create-task
    (read-from-minibuffer "Enter task: ")
    ewl-list-id-inbox
-   'ewl-noop-process-response))
+   'ewl-process-response-and-refresh-list))
 
 (defun ewl-noop-process-response (status)
   (ewl-process-response))
+
+(defun ewl-process-response-and-refresh-list (status)
+  (ewl-process-response)
+  (if (get-buffer ewl-task-buffer-name)
+      (ewl-refresh-current-list)))
 
 (defun ewl-update-task-at-point (&optional is-complete new-list-id due-date new-title)
   "Update task with relevant data."
@@ -475,7 +481,7 @@ The following keys are available in `ewl-notes-mode':
                          (url-build-query-string `((revision ,revision))))))
        (ewl-url-retrieve
         delete-url
-        'ewl-noop-process-response ;;-and-refresh-list
+        'ewl-process-response-and-refresh-list
         nil
         "DELETE")))
    (list task-id)))

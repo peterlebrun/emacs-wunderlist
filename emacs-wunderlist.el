@@ -126,7 +126,7 @@
         (with-current-buffer (ewl-prepare-buffer ewl-task-buffer-name 'ewl-task-mode)
           (setq buffer-read-only nil)
           (setq header-line-format list-name)
-          (ewl-display-items (ewl-prepare-data-for-display json-data 'ewl-parse-item))
+          (ewl-display-items (ewl-parse-data json-data 'ewl-parse-item))
           (setq buffer-read-only t)
           (pop-to-buffer (current-buffer)))
       (message "Error processing API request"))))
@@ -135,7 +135,7 @@
   "Display note in split window"
   (let ((json-data (ewl-process-response)))
     (if json-data
-        (let ((note-data (ewl-prepare-data-for-display json-data 'ewl-parse-note)))
+        (let ((note-data (ewl-parse-data json-data 'ewl-parse-note)))
           (if note-data
             (with-current-buffer (ewl-prepare-buffer ewl-notes-buffer-name 'ewl-notes-mode)
               (split-window-right)
@@ -189,8 +189,8 @@
       (setq buffer-read-only t))
     buf))
 
-(defun ewl-prepare-data-for-display (data cb)
-  "Pivot data into display format"
+(defun ewl-parse-data (data cb)
+  "Parse DATA via CB."
   (mapcar (lambda(item)
             (funcall cb item))
           data))
@@ -206,6 +206,13 @@
          (note nil) ;; @TODO: get note associated with this task
          (title (concat (if due-date "s" " ") (if note "n" " ") " " (plist-get item 'title))))
     (propertize title 'id id 'type type 'list-id list-id 'due-date due-date 'revision revision)))
+
+(defun ewl-parse-note-alist (note)
+  "Callback to parse note data into alist."
+  (let ((task-id (plist-get item 'task_id))
+        (id (plist-get item 'id))
+        (content (plist-get item 'content)))
+    `(,task-id ,id ,content)))
 
 (defun ewl-parse-note (note)
   "Get relevant data for a specific note."
@@ -503,6 +510,12 @@ The following keys are available in `ewl-notes-mode':
   "Return API url to get specific note."
   (concat ewl-url-notes "/" (number-to-string note-id)))
 
+(defun ewl-get-notes-for-list (list-id)
+  "Get all notes for a particular list and return as map of task-id: note info."
+  (ewl-url-retrieve
+   (ewl-url-notes-for-list list-id)
+   'ewl-notes-process-response))
+
 ;; If a note already exists, we'll get a 422 response
 ;; & nothing new will be created
 (defun ewl-create-note-for-task-at-point ()
@@ -533,3 +546,9 @@ The following keys are available in `ewl-notes-mode':
    `(,note-id ,content)))
 
 (ewl-ensure-list-ids)
+
+(defun ewl-notes-process-response (status)
+  (let ((response (ewl-process-response)))
+    (ewl-parse-data response 'ewl-parse-note-alist)))
+
+;(ewl-get-notes-for-list 380556981)

@@ -128,7 +128,8 @@
           (setq header-line-format list-name)
           (ewl-display-items (ewl-parse-data json-data 'ewl-parse-item))
           (setq buffer-read-only t)
-          (pop-to-buffer (current-buffer)))
+          (pop-to-buffer (current-buffer))
+          (goto-char (point-min)))
       (message "Error processing API request"))))
 
 (defun ewl-display-note (status)
@@ -145,6 +146,7 @@
               (setq buffer-read-only nil)
               (setq header-line-format "Notes Buffer")
               (insert (car note-data))
+              (goto-char (point-min))
               (setq buffer-read-only t))
             (message "No note for this task.")))
       (message "Error processing note request"))))
@@ -550,4 +552,5 @@ The following keys are available in `ewl-notes-mode':
 
 (ewl-ensure-list-ids)
 
-(debug (ewl-get-notes-for-list 380556981))
+;; This is only for testing
+;;(ewl-get-notes-for-list 380556981)

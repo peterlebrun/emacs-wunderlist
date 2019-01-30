@@ -157,8 +157,9 @@
      (ewl-url-notes-for-task task-id)
      'ewl-display-note)))
 
-(defun ewl-process-response () ;;status &optional cb)
+(defun ewl-process-response ()
  "Extract the JSON response from the buffer returned by url-http."
+ (goto-char (point-min)) ;; Ensure that we start at beginning of buffer
  (set-buffer-multibyte t)
  (if (re-search-forward "^HTTP/.+ 20.*$" (line-end-position) t)
      ;; 204 means no content - trying to json-read 204 response will error
@@ -510,11 +511,13 @@ The following keys are available in `ewl-notes-mode':
   "Return API url to get specific note."
   (concat ewl-url-notes "/" (number-to-string note-id)))
 
+;; @NOTE: Using synchronous resolution here :/
 (defun ewl-get-notes-for-list (list-id)
   "Get all notes for a particular list and return as map of task-id: note info."
-  (ewl-url-retrieve
-   (ewl-url-notes-for-list list-id)
-   'ewl-notes-process-response))
+  (let* ((url-request-method "GET")
+         (url-request-extra-headers (ewl-get-auth-headers)))
+    (with-current-buffer (url-retrieve-synchronously (ewl-url-notes-for-list list-id))
+      (ewl-process-response))))
 
 ;; If a note already exists, we'll get a 422 response
 ;; & nothing new will be created
@@ -547,8 +550,4 @@ The following keys are available in `ewl-notes-mode':
 
 (ewl-ensure-list-ids)
 
-(defun ewl-notes-process-response (status)
-  (let ((response (ewl-process-response)))
-    (ewl-parse-data response 'ewl-parse-note-alist)))
-
-;(ewl-get-notes-for-list 380556981)
+(debug (ewl-get-notes-for-list 380556981))

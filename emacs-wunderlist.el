@@ -128,8 +128,7 @@
           (setq header-line-format list-name)
           (ewl-display-items (ewl-parse-data json-data 'ewl-parse-item))
           (setq buffer-read-only t)
-          (pop-to-buffer (current-buffer))
-          (goto-char (point-min)))
+          (pop-to-buffer (current-buffer)))
       (message "Error processing API request"))))
 
 (defun ewl-display-note (status)

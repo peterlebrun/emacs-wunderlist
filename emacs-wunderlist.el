@@ -560,5 +560,12 @@ The following keys are available in `ewl-notes-mode':
 
 (ewl-ensure-list-ids)
 
+(defun ewl-init ()
+  "Initialize plugin."
+  ; Also check that lists exist
+  (ewl-ensure-list-ids))
+
+(ewl-init)
+
 ;; This is only for testing
 ;;(ewl-get-notes-for-list 380556981)

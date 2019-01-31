@@ -1,12 +1,13 @@
 ;; @TODO: Handle auth info properly
 ;; @TODO: using org-read-date opens calendar buffer on top of screen, move to bottom
-;; @TODO: Display if task has a note (with a little icon of some sort)
 ;; @TODO: gtd-scheduled list (for scheduled items)
 ;; @TODO: Handle 204s in ewl-process-response
+;; @TODO: Parse HTTP Response code in ewl-process-response
 ;; @TODO: Make tasks editable in place
 ;; @TODO: Highlight full line while moving through tasks
 ;; @TODO: Provide line breaks for anything that runs off the screen
 ;; @TODO: Add postman tests to repo
+;; @TODO: Instead of making API call to get note, read "note" property
 
 ;; @DONE: Create major mode
 ;; @DONE: Set major mode in the buffer I create
@@ -34,6 +35,7 @@
 ;; @DONE: Get buffers to live-refresh
 ;; @DONE: If you have the buffer open, and Inbox being shown, and you add a task, it doesn't update the buffer
 ;; @DONE: Save edits in notes buffer
+;; @DONE: Display if task has a note (with a little icon of some sort)
 
 ;; @DISMISS: Cache responses (when appropriate) to reduce HTTP calls
 
@@ -119,14 +121,14 @@
         (url-request-data data))
     (url-retrieve url cb (or cbargs nil))))
 
-(defun ewl-display-list-items (status list-name)
+(defun ewl-display-list-items (status list-name list-notes)
   "Parse and display list in window"
   (let ((json-data (ewl-process-response)))
     (if json-data
         (with-current-buffer (ewl-prepare-buffer ewl-task-buffer-name 'ewl-task-mode)
           (setq buffer-read-only nil)
           (setq header-line-format list-name)
-          (ewl-display-items (ewl-parse-data json-data 'ewl-parse-item))
+          (ewl-display-items (ewl-parse-data json-data 'ewl-parse-item list-notes))
           (setq buffer-read-only t)
           (pop-to-buffer (current-buffer)))
       (message "Error processing API request"))))
@@ -176,9 +178,10 @@
 
 (defun ewl-display-tasks-for-list (list-id list-name)
   "Display response for all tasks in a particular list"
-  (ewl-url-retrieve
-   (ewl-url-tasks-for-list list-id)
-   'ewl-display-list-items `(,list-name)))
+  (let ((list-notes (ewl-get-notes-for-list list-id)))
+    (ewl-url-retrieve
+     (ewl-url-tasks-for-list list-id)
+     'ewl-display-list-items `(,list-name ,list-notes))))
 
 (defun ewl-prepare-buffer (buffer-name mode-cb)
   "Create consistent buffer object for displaying list items"
@@ -191,13 +194,18 @@
       (setq buffer-read-only t))
     buf))
 
-(defun ewl-parse-data (data cb)
+(defun ewl-parse-data (data cb &optional cbargs)
   "Parse DATA via CB."
   (mapcar (lambda(item)
-            (funcall cb item))
+            (if cbargs (funcall cb item cbargs)
+              (funcall cb item)))
           data))
 
-(defun ewl-parse-item (item)
+(defun ewl-pivot-note (note)
+  "Pivot NOTE by task id."
+  `(,(plist-get note 'task_id) ,note))
+
+(defun ewl-parse-item (item &optional notes)
   "Get relevant data for a specific list item."
   (let* ((id (plist-get item 'id))
          (due-date (plist-get item 'due_date))
@@ -205,9 +213,9 @@
          (type (if (plist-get item 'type) (plist-get item 'type)
                  (if (plist-get item 'list_id) "task")))
          (list-id (plist-get item 'list_id))
-         (note nil) ;; @TODO: get note associated with this task
+         (note (or (assoc id notes) nil)) ;; @TODO: get note associated with this task
          (title (concat (if due-date "s" " ") (if note "n" " ") " " (plist-get item 'title))))
-    (propertize title 'id id 'type type 'list-id list-id 'due-date due-date 'revision revision)))
+    (propertize title 'id id 'type type 'list-id list-id 'due-date due-date 'revision revision 'note note)))
 
 (defun ewl-parse-note-alist (note)
   "Callback to parse note data into alist."
@@ -512,13 +520,14 @@ The following keys are available in `ewl-notes-mode':
   "Return API url to get specific note."
   (concat ewl-url-notes "/" (number-to-string note-id)))
 
-;; @NOTE: Using synchronous resolution here :/
+;; @NOTE: Using synchronous resolution here
 (defun ewl-get-notes-for-list (list-id)
   "Get all notes for a particular list and return as map of task-id: note info."
   (let* ((url-request-method "GET")
          (url-request-extra-headers (ewl-get-auth-headers)))
     (with-current-buffer (url-retrieve-synchronously (ewl-url-notes-for-list list-id))
-      (ewl-process-response))))
+      (let ((data (ewl-process-response)))
+        (ewl-parse-data data 'ewl-pivot-note)))))
 
 ;; If a note already exists, we'll get a 422 response
 ;; & nothing new will be created

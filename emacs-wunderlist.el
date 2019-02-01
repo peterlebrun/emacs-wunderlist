@@ -2,7 +2,6 @@
 ;; @TODO: using org-read-date opens calendar buffer on top of screen, move to bottom
 ;; @TODO: gtd-scheduled list (for scheduled items)
 ;; @TODO: Handle 204s in ewl-process-response
-;; @TODO: Parse HTTP Response code in ewl-process-response
 ;; @TODO: Make tasks editable in place
 ;; @TODO: Highlight full line while moving through tasks
 ;; @TODO: Provide line breaks for anything that runs off the screen
@@ -36,6 +35,7 @@
 ;; @DONE: If you have the buffer open, and Inbox being shown, and you add a task, it doesn't update the buffer
 ;; @DONE: Save edits in notes buffer
 ;; @DONE: Display if task has a note (with a little icon of some sort)
+;; @DONE: Parse HTTP Response code in ewl-process-response
 
 ;; @DISMISS: Cache responses (when appropriate) to reduce HTTP calls
 

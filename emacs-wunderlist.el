@@ -1,7 +1,6 @@
 ;; @TODO: Handle auth info properly
 ;; @TODO: using org-read-date opens calendar buffer on top of screen, move to bottom
 ;; @TODO: gtd-scheduled list (for scheduled items)
-;; @TODO: Handle 204s in ewl-process-response
 ;; @TODO: Make tasks editable in place
 ;; @TODO: Highlight full line while moving through tasks
 ;; @TODO: Provide line breaks for anything that runs off the screen
@@ -36,6 +35,7 @@
 ;; @DONE: Save edits in notes buffer
 ;; @DONE: Display if task has a note (with a little icon of some sort)
 ;; @DONE: Parse HTTP Response code in ewl-process-response
+;; @DONE: Handle 204s in ewl-process-response
 
 ;; @DISMISS: Cache responses (when appropriate) to reduce HTTP calls
 
@@ -165,23 +165,22 @@
   (goto-char (point-min))
   (cadr (split-string (thing-at-point 'line))))
 
+(defun ewl-parse-json ()
+  ""
+  (let ((json-object-type 'plist)
+        (json-key-type 'symbol)
+        (json-array-type 'vector))
+    (json-read)))
+
 (defun ewl-process-response ()
  "Extract the JSON response from the buffer returned by url-http."
  (set-buffer-multibyte t)
  (let ((response-code (ewl-extract-response-code)))
-   )
- (goto-char (point-min)) ;; Ensure that we start at beginning of buffer
- (if (re-search-forward "^HTTP/.+ 20.*$" (line-end-position) t)
-     ;; 204 means no content - trying to json-read 204 response will error
-     ;;(if (string-match-p "^HTTP/.+ 204.*$" (thing-at-point 'line t))
-           ;;(if (fboundp cb) (funcall cb))
-       (when (search-forward "\n\n" nil t)
-         (prog1
-             (let ((json-object-type 'plist)
-                   (json-key-type 'symbol)
-                   (json-array-type 'vector))
-               (json-read))))))
-      ;;     (if (fboundp cb) (funcall cb)))))))
+   (goto-char (point-min)) ;; Ensure that we start at beginning of buffer
+   ;; @TODO Handle other 200
+   ;; @TODO Handle error
+   (when (and (equal response-code "200") (search-forward "\n\n" nil t))
+     (ewl-parse-json))))
 
 (defun ewl-display-tasks-for-list (list-id list-name)
   "Display response for all tasks in a particular list"

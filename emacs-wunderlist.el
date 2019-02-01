@@ -163,15 +163,13 @@
 (defun ewl-extract-response-code ()
   "Extract HTTP response code from response buffer."
   (goto-char (point-min))
-  (goto-char (line-end-position))
-  (backward-word 2)
-  (word-at-point))
+  (cadr (split-string (thing-at-point 'line))))
 
 (defun ewl-process-response ()
  "Extract the JSON response from the buffer returned by url-http."
  (set-buffer-multibyte t)
- ;;(let ((response-code (ewl-extract-response-code)))
-   ;;(debug response-code))
+ (let ((response-code (ewl-extract-response-code)))
+   )
  (goto-char (point-min)) ;; Ensure that we start at beginning of buffer
  (if (re-search-forward "^HTTP/.+ 20.*$" (line-end-position) t)
      ;; 204 means no content - trying to json-read 204 response will error

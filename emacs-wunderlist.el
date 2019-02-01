@@ -152,6 +152,17 @@
             (message "No note for this task.")))
       (message "Error processing note request"))))
 
+(defun ewl--display-note-alt (note)
+  "Display NOTE."
+  )
+
+(defun ewl--display-note-for-task-at-point-alt ()
+  "Display NOTE property of task at point."
+  (let ((line (thing-at-point 'line))
+        (note (get-text-property 1 'note line)))
+  )
+  )
+
 (defun ewl-display-note-for-task-at-point ()
   "Display note for task under cursor"
   (let* ((text-string (thing-at-point 'line))
@@ -287,7 +298,8 @@
   "A major mode for the ewl task buffer.
 The following keys are available in `ewl-task-mode':
 \\{ewl-task-mode-map}"
-  (setq truncate-lines t))
+  (setq truncate-lines t)
+  (add-hook 'post-command-hook 'ewl--highlight-current-line nil t))
 
 (defun ewl-get-notes-mode-map ()
   "Turn this into a function so it can refresh for dev purposes"
@@ -575,3 +587,30 @@ The following keys are available in `ewl-notes-mode':
 
 ;; This is only for testing
 ;;(ewl-get-notes-for-list 380556981)
+
+(defun ewl--highlight-current-line ()
+  "Create highlight effect on current line using overlay."
+  (if (ewl--thing-on-this-line-p)
+      (let ((end (save-excursion
+                   (forward-line 1)
+                   (point))))
+        (move-overlay ewl-highlight-current-line-overlay (line-beginning-position) end))
+    (delete-overlay ewl-highlight-current-line-overlay)))
+
+(defun ewl--thing-on-this-line-p ()
+  "Determine whether there is a thin on this line."
+  (get-text-property (line-beginning-position) 'thing))
+
+(defface ewl-highlight-line-face
+  '((((background dark)) :background "#323878")
+    (((background light)) :background "#C7CAF2"))
+  "Face used to highlight the active line."
+  :group 'ewl)
+
+(defvar ewl-highlight-current-line-overlay
+  ;; Dummy initialization
+  (make-overlay 1 1)
+  "Overlay for highlighting the current line.")
+
+(overlay-put ewl-highlight-current-line-overlay
+             'face 'ewl-highlight-line-face)

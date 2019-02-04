@@ -133,43 +133,25 @@
           (pop-to-buffer (current-buffer)))
       (message "Error processing API request"))))
 
-(defun ewl-display-note (status)
-  "Display note in split window"
-  (let ((json-data (ewl-process-response)))
-    (if json-data
-        (let ((note-data (ewl-parse-data json-data 'ewl-parse-note)))
-          (if note-data
-            (with-current-buffer (ewl-prepare-buffer ewl-notes-buffer-name 'ewl-notes-mode)
-              (split-window-right)
-              (other-window 2) ;; Concern from pedro: Will this always work?
-              ;; @TODO: Why do I need this line here?
-              (pop-to-buffer ewl-notes-buffer-name)
-              (setq buffer-read-only nil)
-              (setq header-line-format "Notes Buffer")
-              (insert (car note-data))
-              (goto-char (point-min))
-              (setq buffer-read-only t))
-            (message "No note for this task.")))
-      (message "Error processing note request"))))
-
-(defun ewl--display-note-alt (note)
+(defun ewl--display-note (note)
   "Display NOTE."
-  )
+  (with-current-buffer (ewl-prepare-buffer ewl-notes-buffer-name 'ewl-notes-mode)
+    (split-window-right)
+    (other-window 2) ;; Concern from pedro: Will this always work?
+    ;; @TODO: Why do I need this line here?
+    (pop-to-buffer ewl-notes-buffer-name)
+    (setq buffer-read-only nil)
+    (setq header-line-format "Notes Buffer")
+    (insert (car (ewl-parse-data note 'ewl-parse-note)))
+    (goto-char (point-min))
+    (setq buffer-read-only t)))
 
-(defun ewl--display-note-for-task-at-point-alt ()
+(defun ewl--display-note-for-task-at-point ()
   "Display NOTE property of task at point."
-  (let ((line (thing-at-point 'line))
-        (note (get-text-property 1 'note line)))
-  )
-  )
-
-(defun ewl-display-note-for-task-at-point ()
-  "Display note for task under cursor"
-  (let* ((text-string (thing-at-point 'line))
-         (task-id (get-text-property 1 'id text-string)))
-    (ewl-url-retrieve
-     (ewl-url-notes-for-task task-id)
-     'ewl-display-note)))
+  (let* ((line (thing-at-point 'line))
+         (note (get-text-property 1 'note line)))
+    (if note (ewl--display-note note)
+      (message "No note for this task."))))
 
 (defun ewl-extract-response-code ()
   "Extract HTTP response code from response buffer."
@@ -230,7 +212,7 @@
          (type (if (plist-get item 'type) (plist-get item 'type)
                  (if (plist-get item 'list_id) "task")))
          (list-id (plist-get item 'list_id))
-         (note (or (assoc id notes) nil)) ;; @TODO: get note associated with this task
+         (note (or (cdr (assoc id notes)) nil)) ;; @TODO: get note associated with this task
          (title (concat (if due-date "s" " ") (if note "n" " ") " " (plist-get item 'title))))
     (propertize title 'id id 'type type 'list-id list-id 'due-date due-date 'revision revision 'note note)))
 
@@ -286,7 +268,7 @@
     (define-key map "dp"
       (lambda() (interactive) (ewl-display-priorities)))
     (define-key map "w"
-      (lambda() (interactive) (ewl-display-note-for-task-at-point)))
+      (lambda() (interactive) (ewl--display-note-for-task-at-point)))
     map))
 
 ;; Evil mode will override this

@@ -5,7 +5,6 @@
 ;; @TODO: Highlight full line while moving through tasks
 ;; @TODO: Provide line breaks for anything that runs off the screen
 ;; @TODO: Add postman tests to repo
-;; @TODO: Instead of making API call to get note, read "note" property
 
 ;; @DONE: Create major mode
 ;; @DONE: Set major mode in the buffer I create
@@ -36,6 +35,7 @@
 ;; @DONE: Display if task has a note (with a little icon of some sort)
 ;; @DONE: Parse HTTP Response code in ewl-process-response
 ;; @DONE: Handle 204s in ewl-process-response
+;; @DONE: Instead of making API call to get note, read "note" property
 
 ;; @DISMISS: Cache responses (when appropriate) to reduce HTTP calls
 

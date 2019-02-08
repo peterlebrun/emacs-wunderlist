@@ -5,6 +5,7 @@
 ;; @TODO: Highlight full line while moving through tasks
 ;; @TODO: Provide line breaks for anything that runs off the screen
 ;; @TODO: Add postman tests to repo
+;; @TODO: Why doesn't highlighting work?
 
 ;; @DONE: Create major mode
 ;; @DONE: Set major mode in the buffer I create

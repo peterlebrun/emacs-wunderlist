@@ -40,7 +40,7 @@
 ;; @DISMISS: Cache responses (when appropriate) to reduce HTTP calls
 
 ;; Load auth info during development
-(load-file (concat (file-name-directory load-file-name) "setup.el"))
+(load-library (concat (file-name-directory load-file-name) "setup.el.gpg"))
 
 (defgroup ewl nil
   "A simple plugin to manage your wunderlist via emacs"

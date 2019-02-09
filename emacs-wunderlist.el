@@ -72,6 +72,11 @@
   :group 'ewl
   :type 'integer)
 
+(defcustom ewl-list-id-groceries nil
+  "ID for groceries list"
+  :group 'ewl
+  :type 'integer)
+
 (defcustom ewl-task-buffer-name "*ewl-tasks*"
   "Name for the emacs wunderlist task buffer."
   :group 'ewl
@@ -94,6 +99,11 @@
 
 (defcustom ewl-list-name-backlog "gtd-backlog"
   "Name given to the backlog list."
+  :group 'ewl
+  :type 'string)
+
+(defcustom ewl-list-name-groceries "gtd-groceries"
+  "Name given to the groceries list."
   :group 'ewl
   :type 'string)
 
@@ -244,6 +254,8 @@
   (let ((map (make-sparse-keymap)))
     (define-key map "t"
       (lambda() (interactive) (ewl-add-task-to-inbox)))
+    (define-key map "g"
+      (lambda() (interactive) (ewl-add-to-groceries-list)))
     (define-key map "c"
       (lambda() (interactive) (ewl-update-task-at-point t)))
     (define-key map "r"
@@ -268,6 +280,8 @@
       (lambda() (interactive) (ewl-display-backlog)))
     (define-key map "dp"
       (lambda() (interactive) (ewl-display-priorities)))
+    (define-key map "dg"
+      (lambda() (interactive) (ewl-display-groceries)))
     (define-key map "w"
       (lambda() (interactive) (ewl--display-note-for-task-at-point)))
     map))
@@ -356,6 +370,10 @@ The following keys are available in `ewl-notes-mode':
   "Syntactic sugar to display priorities list."
   (ewl-display-tasks-for-list ewl-list-id-priorities "PRIORITIES"))
 
+(defun ewl-display-groceries ()
+  "Syntactic sugar to display groceries list."
+  (ewl-display-tasks-for-list ewl-list-id-groceries "GROCERIES"))
+
 (defun ewl-create-task (task-title list-id cb)
   "Create task from given inputs"
   (ewl-url-retrieve
@@ -415,7 +433,8 @@ The following keys are available in `ewl-notes-mode':
   (if (or
        (not ewl-list-id-inbox)
        (not ewl-list-id-priorities)
-       (not ewl-list-id-backlog))
+       (not ewl-list-id-backlog)
+       (not ewl-list-id-groceries))
       (ewl-url-retrieve ewl-url-lists 'ewl-load-list-ids)))
 
 ;; @TODO: If list IDs are null after this
@@ -426,13 +445,15 @@ The following keys are available in `ewl-notes-mode':
         (found-list-id-inbox nil)
         (found-list-id-priorities nil)
         (found-list-id-backlog nil)
+        (found-list-id-groceries nil)
         (i 0))
     (while (and
             (<= i (length lists-data))
             (or
              (not found-list-id-inbox)
              (not found-list-id-priorities)
-             (not found-list-id-backlog)))
+             (not found-list-id-backlog)
+             (not found-list-id-groceries)))
       (let* ((list-data (elt lists-data i))
              (list-type (plist-get list-data 'list_type))
              (list-title (plist-get list-data 'title))
@@ -446,6 +467,9 @@ The following keys are available in `ewl-notes-mode':
         (when (equal list-title ewl-list-name-backlog)
           (setq ewl-list-id-backlog list-id)
           (setq found-list-id-backlog t))
+        (when (equal list-title ewl-list-name-groceries)
+          (setq ewl-list-id-groceries list-id)
+          (setq found-list-id-groceries t))
         (setq i (+ 1 i))))))
 
 ;; Ideally bind to ,-t but this would be handled by the user's config
@@ -455,6 +479,14 @@ The following keys are available in `ewl-notes-mode':
   (ewl-create-task
    (read-from-minibuffer "Enter task: ")
    ewl-list-id-inbox
+   'ewl-process-response-and-refresh-list))
+
+(defun ewl-add-to-groceries-list ()
+  "Add new task to inbox."
+  (ewl-ensure-list-ids)
+  (ewl-create-task
+   (read-from-minibuffer "Enter Grocery Item: ")
+   ewl-list-id-groceries
    'ewl-process-response-and-refresh-list))
 
 (defun ewl-noop-process-response (status)

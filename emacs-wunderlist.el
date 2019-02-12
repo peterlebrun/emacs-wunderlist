@@ -6,6 +6,7 @@
 ;; @TODO: Provide line breaks for anything that runs off the screen
 ;; @TODO: Add postman tests to repo
 ;; @TODO: Why doesn't highlighting work?
+;; @TODO: Save mark in task buffer before refresh
 
 ;; @DONE: Create major mode
 ;; @DONE: Set major mode in the buffer I create
@@ -39,9 +40,6 @@
 ;; @DONE: Instead of making API call to get note, read "note" property
 
 ;; @DISMISS: Cache responses (when appropriate) to reduce HTTP calls
-
-;; Load auth info during development
-(load-library (concat (file-name-directory load-file-name) "setup.el.gpg"))
 
 (defgroup ewl nil
   "A simple plugin to manage your wunderlist via emacs"

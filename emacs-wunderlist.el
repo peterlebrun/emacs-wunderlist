@@ -1,4 +1,3 @@
-;; @TODO: Handle auth info properly
 ;; @TODO: using org-read-date opens calendar buffer on top of screen, move to bottom
 ;; @TODO: gtd-scheduled list (for scheduled items)
 ;; @TODO: Make tasks editable in place
@@ -38,6 +37,7 @@
 ;; @DONE: Parse HTTP Response code in ewl-process-response
 ;; @DONE: Handle 204s in ewl-process-response
 ;; @DONE: Instead of making API call to get note, read "note" property
+;; @DONE: Handle auth info properly
 
 ;; @DISMISS: Cache responses (when appropriate) to reduce HTTP calls
 
